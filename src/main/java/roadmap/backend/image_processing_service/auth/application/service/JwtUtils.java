@@ -8,7 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailsCustom;
+import roadmap.backend.image_processing_service.auth.application.interfaces.UserDetailsCustom;
 
 import java.security.Key;
 import java.util.Date;

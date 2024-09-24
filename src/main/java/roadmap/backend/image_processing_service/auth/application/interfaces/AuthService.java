@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.auth.application.adapter;
+package roadmap.backend.image_processing_service.auth.application.interfaces;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;

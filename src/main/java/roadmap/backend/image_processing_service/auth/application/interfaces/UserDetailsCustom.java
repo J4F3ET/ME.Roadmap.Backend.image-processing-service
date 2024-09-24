@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.auth.application.adapter;
+package roadmap.backend.image_processing_service.auth.application.interfaces;
 
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
