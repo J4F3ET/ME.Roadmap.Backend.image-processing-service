@@ -1,6 +1,5 @@
 package roadmap.backend.image_processing_service.auth;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,14 +13,15 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import roadmap.backend.image_processing_service.auth.application.service.UserDetailsServiceImpl;
-import roadmap.backend.image_processing_service.auth.domain.repository.UserRepository;
+import roadmap.backend.image_processing_service.auth.application.adapter.UserRepository;
 import roadmap.backend.image_processing_service.auth.infrastructure.filter.JwtAuthenticationFilter;
+
+import java.util.List;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -32,16 +32,13 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfiguration {
 
     private final UserRepository userRepository;
-    private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public SecurityConfiguration(
             UserRepository userRepository,
-            AuthenticationConfiguration authenticationConfiguration,
             JwtAuthenticationFilter jwtAuthenticationFilter
     ) {
         this.userRepository = userRepository;
-        this.authenticationConfiguration = authenticationConfiguration;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
     @Bean
@@ -53,12 +50,20 @@ public class SecurityConfiguration {
                 .addFilterBefore(jwtAuthenticationFilter, BasicAuthenticationFilter.class)
                 .build();
     }
-    //    @Bean
-//    CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration configuration = new CorsConfiguration();
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        return source;
-//    }
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(List.of("http://localhost:8080"));
+        configuration.setAllowedMethods(List.of("GET","POST"));
+        configuration.setAllowedHeaders(List.of("Authorization","Content-Type"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/**",configuration);
+
+        return source;
+    }
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();

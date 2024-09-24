@@ -1,15 +1,13 @@
 package roadmap.backend.image_processing_service.auth.application.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailServiceAdapter;
+import roadmap.backend.image_processing_service.auth.application.adapter.UserRepository;
 import roadmap.backend.image_processing_service.auth.domain.entity.UserEntity;
-import roadmap.backend.image_processing_service.auth.domain.repository.UserRepository;
 
 import java.util.Collections;
 @Service

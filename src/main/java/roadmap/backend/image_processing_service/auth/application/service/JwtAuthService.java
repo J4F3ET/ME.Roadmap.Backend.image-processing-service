@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.adapter.AuthResponse;
 import roadmap.backend.image_processing_service.auth.application.adapter.AuthService;
 import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailServiceAdapter;
+import roadmap.backend.image_processing_service.auth.application.adapter.UserRepository;
 import roadmap.backend.image_processing_service.auth.domain.entity.UserEntity;
-import roadmap.backend.image_processing_service.auth.domain.repository.UserRepository;
 
 @Primary
 @Service
