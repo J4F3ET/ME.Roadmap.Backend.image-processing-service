@@ -10,10 +10,12 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,9 +25,10 @@ import roadmap.backend.image_processing_service.auth.infrastructure.filter.JwtAu
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-@Configuration
+
 @EnableWebSecurity
 @EnableMethodSecurity
+@Configuration
 public class SecurityConfiguration {
 
     private final UserRepository userRepository;
@@ -43,13 +46,14 @@ public class SecurityConfiguration {
     }
     @Bean
     SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-         return httpSecurity
-             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-             .httpBasic(withDefaults())
-             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-             .build();
+        return httpSecurity
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .httpBasic(withDefaults())
+                .addFilterBefore(jwtAuthenticationFilter, BasicAuthenticationFilter.class)
+                .build();
     }
-//    @Bean
+    //    @Bean
 //    CorsConfigurationSource corsConfigurationSource() {
 //        CorsConfiguration configuration = new CorsConfiguration();
 //        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -75,3 +79,4 @@ public class SecurityConfiguration {
     }
 
 }
+

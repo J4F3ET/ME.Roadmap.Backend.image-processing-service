@@ -1,11 +1,12 @@
 package roadmap.backend.image_processing_service.auth.application.adapter;
 
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 
 @Service
 public interface AuthService {
-    String register(String username, String password);
-    String login(String username, String password);
-    void logout(String username, String password);
+    final UserDetailsService userDetailsService = null;
+    public AuthResponse register(String username, String password);
+    public AuthResponse login(String username, String password);
 }

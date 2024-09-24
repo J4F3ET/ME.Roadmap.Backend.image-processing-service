@@ -1,114 +1,92 @@
 package roadmap.backend.image_processing_service.auth.application.service;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.NonNull;
+import org.springframework.context.annotation.Primary;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import roadmap.backend.image_processing_service.auth.application.adapter.AuthResponse;
 import roadmap.backend.image_processing_service.auth.application.adapter.AuthService;
+import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailServiceAdapter;
 import roadmap.backend.image_processing_service.auth.domain.entity.UserEntity;
 import roadmap.backend.image_processing_service.auth.domain.repository.UserRepository;
 
-import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-
+@Primary
 @Service
 public class JwtAuthService implements AuthService {
-
+    private final UserDetailServiceAdapter userDetailsService;
     private final UserRepository repository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
-    @Value("${security.jwt.secret-key}")
-    private String secretKey;
-
-    @Value("${security.jwt.expiration-time}")
-    private long jwtExpiration;
-
-    public JwtAuthService(UserRepository repository) {
+    public JwtAuthService(
+            UserDetailServiceAdapter userDetailsService,
+            UserRepository repository,
+            PasswordEncoder passwordEncoder,
+            JwtUtils jwtUtils
+    ){
+        this.userDetailsService = userDetailsService;
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
     }
 
     @Override
-    public String register(String username, String password) {
-        UserEntity user = new UserEntity(username, password);
-        this.repository.save(user);
-        return "Registered";
-    }
+    public AuthResponse register(String username, String password) {
+        if (repository.findByUsername(username).isPresent()) {
+            throw new UsernameNotFoundException("User already exists");
+        }
 
+        final UserEntity newUser = new UserEntity(username, passwordEncoder.encode(password));
+        repository.save(newUser);
+
+        return new AuthResponse(
+                username,
+                this.generateSession(userDetailsService.parseUser(newUser),password)
+        );
+    }
     @Override
-    public String login(String username, String password) {
-        return "";
+    public AuthResponse login(String username, String password) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        verifyUserDetails(userDetails);
+        return new AuthResponse(username, this.generateSession(userDetails,password));
     }
 
-    @Override
-    public void logout(String username, String password) {
+    @NonNull
+    private Authentication authenticate(@NonNull UserDetails userDetails, String password) {
 
-    }
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
+        if (!passwordEncoder.matches(password, userDetails.getPassword())) {
+            throw new BadCredentialsException("Bad credentials");
+        }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+        return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
     }
-
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+    @NonNull
+    private String generateSession(@NonNull UserDetails userDetails,String password) {
+        Authentication authentication = this.authenticate(userDetails,password);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return jwtUtils.generateToken(userDetails);
     }
-
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, jwtExpiration);
-    }
-
-    public long getExpirationTime() {
-        return jwtExpiration;
-    }
-
-    private String buildToken(
-            Map<String, Object> extraClaims,
-            UserDetails userDetails,
-            long expiration
-    ) {
-        return Jwts
-                .builder()
-                .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
-    }
-
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts
-                .parserBuilder()
-                .setSigningKey(getSignInKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
-
-    private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private void verifyUserDetails(UserDetails userDetails) {
+        if(userDetails == null) {
+            throw new UsernameNotFoundException("User not found");
+        }
+        if (!userDetails.isAccountNonExpired()) {
+            throw new UsernameNotFoundException("User account has expired");
+        }
+        if (!userDetails.isAccountNonLocked()) {
+            throw new UsernameNotFoundException("User account is locked");
+        }
+        if (!userDetails.isCredentialsNonExpired()) {
+            throw new UsernameNotFoundException("User credentials have expired");
+        }
+        if (!userDetails.isEnabled()) {
+            throw new UsernameNotFoundException("User is disabled");
+        }
     }
 }

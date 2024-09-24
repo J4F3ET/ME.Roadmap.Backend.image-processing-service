@@ -5,7 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,7 +14,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
-import roadmap.backend.image_processing_service.auth.application.service.JwtAuthService;
+import roadmap.backend.image_processing_service.auth.application.service.JwtUtils;
 
 import java.io.IOException;
 @Component
@@ -23,16 +22,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final HandlerExceptionResolver handlerExceptionResolver;
 
-    private final JwtAuthService jwtService;
+    private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsServiceImpl;
 
     public JwtAuthenticationFilter(
             HandlerExceptionResolver handlerExceptionResolver,
-            JwtAuthService jwtService,
+            JwtUtils jwtUtils,
             UserDetailsService userDetailsServiceImpl
     ) {
         this.handlerExceptionResolver = handlerExceptionResolver;
-        this.jwtService = jwtService;
+        this.jwtUtils = jwtUtils;
         this.userDetailsServiceImpl = userDetailsServiceImpl;
     }
 
@@ -42,23 +41,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-
         final String authHeader = request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
         try {
             final String jwtToken = authHeader.substring(7);
-            final String username = jwtService.extractUsername(jwtToken);
+            final String username = jwtUtils.extractUsername(jwtToken);
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
             if (username != null && authentication == null) {
                 UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(username);
 
-                if (jwtService.isTokenValid(jwtToken, userDetails)) {
+                if (jwtUtils.isTokenValid(jwtToken, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,

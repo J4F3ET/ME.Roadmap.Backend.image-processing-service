@@ -7,12 +7,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailServiceAdapter;
 import roadmap.backend.image_processing_service.auth.domain.entity.UserEntity;
 import roadmap.backend.image_processing_service.auth.domain.repository.UserRepository;
 
 import java.util.Collections;
 @Service
-public class UserDetailsServiceImpl implements UserDetailsService {
+public class UserDetailsServiceImpl implements UserDetailServiceAdapter {
     private final UserRepository userRepository;
 
     public UserDetailsServiceImpl(UserRepository userRepository) {
@@ -28,6 +29,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_USER");
 
         return parseUser(userEntity, authority);
+    }
+    @Override
+    public UserDetails parseUser(UserEntity userEntity){
+        return new User(
+                userEntity.getUsername(),
+                userEntity.getPassword(),
+                userEntity.isEnabled(),
+                userEntity.isAccountNoExpired(),
+                userEntity.isAccountNoLocked(),
+                userEntity.isCredentialsNoExpired(),
+                Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"))
+        );
     }
     private UserDetails parseUser(UserEntity userEntity,SimpleGrantedAuthority authority){
         return new User(
