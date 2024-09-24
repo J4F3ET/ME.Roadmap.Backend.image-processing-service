@@ -1,17 +1,17 @@
 services:
   postgres:
     image: 'postgres:alpine'
+    container_name: postgres_db
     environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+      - POSTGRES_DB=db_image_processing_service
+      - POSTGRES_USER=user_image_processing_service
+      - POSTGRES_PASSWORD=secret
     ports:
-      - '5432:5432'
+      - '5400:5432'
     volumes:
       - 'postgres_data:/var/lib/postgresql/data'
     networks:
       - backend-network
-  # Servicio necesario para kafka
   zookeeper:
     image: 'wurstmeister/zookeeper:latest'
     container_name: 'zookeeper'
