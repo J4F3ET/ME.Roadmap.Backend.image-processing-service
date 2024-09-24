@@ -8,6 +8,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailsCustom;
 
 import java.security.Key;
 import java.util.Date;
@@ -32,8 +33,10 @@ public class JwtUtils {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+    public String generateToken(UserDetailsCustom userDetails) {
+        HashMap<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("id", userDetails.getId());
+        return generateToken(extraClaims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

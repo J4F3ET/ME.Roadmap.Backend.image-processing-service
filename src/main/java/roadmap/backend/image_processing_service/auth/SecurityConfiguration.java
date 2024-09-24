@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import roadmap.backend.image_processing_service.auth.application.service.UserDetailsServiceImpl;
+import roadmap.backend.image_processing_service.auth.application.service.UserDetailsServiceCustom;
 import roadmap.backend.image_processing_service.auth.application.adapter.UserRepository;
 import roadmap.backend.image_processing_service.auth.infrastructure.filter.JwtAuthenticationFilter;
 
@@ -73,7 +73,7 @@ public class SecurityConfiguration {
 
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
 
-        provider.setUserDetailsService(new UserDetailsServiceImpl(this.userRepository));
+        provider.setUserDetailsService(new UserDetailsServiceCustom(this.userRepository));
         provider.setPasswordEncoder(this.passwordEncoder());
 
         return provider;

@@ -1,25 +1,24 @@
 package roadmap.backend.image_processing_service.auth.application.service;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailServiceAdapter;
+import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailsCustom;
 import roadmap.backend.image_processing_service.auth.application.adapter.UserRepository;
 import roadmap.backend.image_processing_service.auth.domain.entity.UserEntity;
 
 import java.util.Collections;
 @Service
-public class UserDetailsServiceImpl implements UserDetailServiceAdapter {
+public class UserDetailsServiceCustom implements UserDetailServiceAdapter {
     private final UserRepository userRepository;
 
-    public UserDetailsServiceImpl(UserRepository userRepository) {
+    public UserDetailsServiceCustom(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetailsCustom loadUserByUsername(String username) throws UsernameNotFoundException {
 
         UserEntity userEntity = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -29,8 +28,9 @@ public class UserDetailsServiceImpl implements UserDetailServiceAdapter {
         return parseUser(userEntity, authority);
     }
     @Override
-    public UserDetails parseUser(UserEntity userEntity){
-        return new User(
+    public UserDetailsCustom parseUser(UserEntity userEntity){
+        return new UserDetailsCustom(
+                userEntity.getId(),
                 userEntity.getUsername(),
                 userEntity.getPassword(),
                 userEntity.isEnabled(),
@@ -40,8 +40,9 @@ public class UserDetailsServiceImpl implements UserDetailServiceAdapter {
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"))
         );
     }
-    private UserDetails parseUser(UserEntity userEntity,SimpleGrantedAuthority authority){
-        return new User(
+    private UserDetailsCustom parseUser(UserEntity userEntity,SimpleGrantedAuthority authority){
+        return new UserDetailsCustom(
+                userEntity.getId(),
                 userEntity.getUsername(),
                 userEntity.getPassword(),
                 userEntity.isEnabled(),

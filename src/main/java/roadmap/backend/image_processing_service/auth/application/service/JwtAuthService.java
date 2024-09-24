@@ -10,10 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import roadmap.backend.image_processing_service.auth.application.adapter.AuthResponse;
-import roadmap.backend.image_processing_service.auth.application.adapter.AuthService;
-import roadmap.backend.image_processing_service.auth.application.adapter.UserDetailServiceAdapter;
-import roadmap.backend.image_processing_service.auth.application.adapter.UserRepository;
+import roadmap.backend.image_processing_service.auth.application.adapter.*;
 import roadmap.backend.image_processing_service.auth.domain.entity.UserEntity;
 
 @Primary
@@ -52,7 +49,7 @@ public class JwtAuthService implements AuthService {
     }
     @Override
     public AuthResponse login(String username, String password) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        UserDetailsCustom userDetails = userDetailsService.loadUserByUsername(username);
         verifyUserDetails(userDetails);
         return new AuthResponse(username, this.generateSession(userDetails,password));
     }
@@ -67,7 +64,7 @@ public class JwtAuthService implements AuthService {
         return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
     }
     @NonNull
-    private String generateSession(@NonNull UserDetails userDetails,String password) {
+    private String generateSession(@NonNull UserDetailsCustom userDetails,String password) {
         Authentication authentication = this.authenticate(userDetails,password);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         return jwtUtils.generateToken(userDetails);
