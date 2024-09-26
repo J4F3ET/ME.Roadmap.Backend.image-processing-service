@@ -5,9 +5,12 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.micrometer.common.lang.NonNull;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import roadmap.backend.image_processing_service.auth.application.interfaces.UserDetailsCustom;
 
 import java.security.Key;
@@ -74,7 +77,14 @@ public class JwtUtils {
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
-
+    public Integer extractId(String token) {
+        return (Integer) extractAllClaims(token).get("id");
+    }
+    public Integer extractUserIdByRequest(HttpServletRequest request) throws IllegalArgumentException {
+        return this.extractId(
+                extractTokenFromRequest(request)
+        );
+    }
     private Claims extractAllClaims(String token) {
         return Jwts
                 .parserBuilder()
@@ -83,7 +93,13 @@ public class JwtUtils {
                 .parseClaimsJws(token)
                 .getBody();
     }
-
+    public String extractTokenFromRequest(@NonNull HttpServletRequest request) throws IllegalArgumentException {
+        final String bearerToken = request.getHeader("Authorization");
+        if (!StringUtils.hasText(bearerToken) || !bearerToken.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("No token found in request");
+        }
+        return bearerToken.substring(7);
+    }
     private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);

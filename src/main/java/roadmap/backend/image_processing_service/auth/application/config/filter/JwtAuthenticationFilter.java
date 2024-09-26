@@ -9,12 +9,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import roadmap.backend.image_processing_service.auth.application.service.JwtUtils;
+import roadmap.backend.image_processing_service.auth.application.service.UserDetailsServiceCustom;
 
 import java.io.IOException;
 @Component
@@ -23,12 +23,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
 
     private final JwtUtils jwtUtils;
-    private final UserDetailsService userDetailsServiceImpl;
+    private final UserDetailsServiceCustom userDetailsServiceImpl;
 
     public JwtAuthenticationFilter(
             HandlerExceptionResolver handlerExceptionResolver,
             JwtUtils jwtUtils,
-            UserDetailsService userDetailsServiceImpl
+            UserDetailsServiceCustom userDetailsServiceImpl
     ) {
         this.handlerExceptionResolver = handlerExceptionResolver;
         this.jwtUtils = jwtUtils;
@@ -64,7 +64,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
-
             }
             filterChain.doFilter(request, response);
         }catch (Exception e){
