@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.auth.application.interfaces;
+package roadmap.backend.image_processing_service.auth.application.interfaces.repository;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;

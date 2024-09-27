@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.auth.application.config;
+package roadmap.backend.image_processing_service.auth.application.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,8 +18,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import roadmap.backend.image_processing_service.auth.application.service.UserDetailsServiceCustom;
-import roadmap.backend.image_processing_service.auth.application.interfaces.UserRepository;
-import roadmap.backend.image_processing_service.auth.application.config.filter.JwtAuthenticationFilter;
+import roadmap.backend.image_processing_service.auth.application.interfaces.repository.UserRepository;
+import roadmap.backend.image_processing_service.auth.application.config.security.filter.JwtAuthenticationFilter;
 
 import java.util.List;
 

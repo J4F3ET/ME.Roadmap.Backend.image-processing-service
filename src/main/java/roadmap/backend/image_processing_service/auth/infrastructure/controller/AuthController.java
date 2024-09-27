@@ -5,9 +5,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import roadmap.backend.image_processing_service.auth.application.interfaces.AuthResponse;
+import roadmap.backend.image_processing_service.auth.application.interfaces.apiRest.AuthResponse;
 import roadmap.backend.image_processing_service.auth.application.interfaces.AuthService;
-import roadmap.backend.image_processing_service.auth.application.interfaces.AuthRequest;
+import roadmap.backend.image_processing_service.auth.application.interfaces.apiRest.AuthRequest;
 
 @Controller
 @ResponseBody

@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.image.application.config;
+package roadmap.backend.image_processing_service.image.application.config.kafka;
 
 import lombok.NonNull;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -6,10 +6,9 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScans;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
@@ -20,8 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@ComponentScans({@ComponentScan("roadmap.backend.image_processing_service.image.application.config.topic")})
-public class KafkaProviderConfig {
+public class KafkaProviderConfigModuleImage {
     @Value("${spring.kafka.bootstrap-servers}")//Host de Kafka
     private String bootstrapServers;
 
@@ -33,18 +31,21 @@ public class KafkaProviderConfig {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         return props;
     }
-
+    //Producer
     @Bean
-    public ProducerFactory<String, String> producerFactory() {
+    @Qualifier("producerFactoryModuleImage")
+    public ProducerFactory<String, String> producerFactoryModuleImage() {
         return new DefaultKafkaProducerFactory<>(this.producerConfigs());
     }
 
     @Bean
-    public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
-        return new KafkaTemplate<>(producerFactory);
+    @Qualifier("kafkaTemplateModuleImage")
+    public KafkaTemplate<String, String> kafkaTemplateModuleImage(
+            @Qualifier("producerFactoryModuleImage") ProducerFactory<String, String> producerFactoryModuleImage
+    ){
+        return new KafkaTemplate<>(producerFactoryModuleImage);
     }
-
-
+    // Consumer
     public Map<String, Object> consumerConfigs() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -53,14 +54,19 @@ public class KafkaProviderConfig {
         return props;
     }
     @Bean
-    public ConsumerFactory<String, String> consumerFactory() {
+    @Qualifier("consumerFactoryModuleImage")
+    public ConsumerFactory<String, String> consumerFactoryModuleImage() {
         return new DefaultKafkaConsumerFactory<>(consumerConfigs());
     }
     @Bean
-    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> kafkaListenerContainerFactory(ConsumerFactory<String, String> consumerFactory) {
+    @Qualifier("kafkaListenerContainerFactoryModuleImage")
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> kafkaListenerContainerFactoryModuleImage(
+            @Qualifier("consumerFactoryModuleImage") ConsumerFactory<String, String> consumerFactory
+    ) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         return factory;
     }
+
 
 }

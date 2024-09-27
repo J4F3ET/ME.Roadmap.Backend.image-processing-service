@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.auth.application.interfaces;
+package roadmap.backend.image_processing_service.auth.application.interfaces.apiRest;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 

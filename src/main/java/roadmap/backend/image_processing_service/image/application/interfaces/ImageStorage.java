@@ -1,13 +1,18 @@
 package roadmap.backend.image_processing_service.image.application.interfaces;
 
-import roadmap.backend.image_processing_service.image.domain.entity.ImageDTO;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.HashMap;
 
+@Service
 public interface ImageStorage {
-    ImageDTO saveImage(Integer userId, byte[] image);
-    ImageDTO getImage(Integer userId, Integer imageId);
-    void deleteImage(Integer userId, Integer imageId);
-    boolean isImageExists(Integer userId, Integer imageId);
-    HashMap<Integer, ImageDTO> getAllImages(Integer userId);
+    @Async
+    String saveImage(String username, MultipartFile file);
+    File getImage(String username, String imageName);
+    void deleteImage(String username, String imageName);
+    boolean isImageExists(String username, String imageName);
+    HashMap<String, File> getAllImages(String username);
 }

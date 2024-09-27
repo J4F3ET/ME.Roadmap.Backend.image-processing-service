@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.interfaces.*;
+import roadmap.backend.image_processing_service.auth.application.interfaces.apiRest.AuthResponse;
+import roadmap.backend.image_processing_service.auth.application.interfaces.repository.UserRepository;
 import roadmap.backend.image_processing_service.auth.domain.entity.UserEntity;
 
 @Primary

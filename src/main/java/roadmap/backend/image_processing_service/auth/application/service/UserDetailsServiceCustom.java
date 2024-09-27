@@ -5,7 +5,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.interfaces.UserDetailServiceAdapter;
 import roadmap.backend.image_processing_service.auth.application.interfaces.UserDetailsCustom;
-import roadmap.backend.image_processing_service.auth.application.interfaces.UserRepository;
+import roadmap.backend.image_processing_service.auth.application.interfaces.repository.UserRepository;
 import roadmap.backend.image_processing_service.auth.domain.entity.UserEntity;
 
 import java.util.Collections;

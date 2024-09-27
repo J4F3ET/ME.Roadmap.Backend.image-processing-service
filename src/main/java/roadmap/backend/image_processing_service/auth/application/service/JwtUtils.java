@@ -85,6 +85,11 @@ public class JwtUtils {
                 extractTokenFromRequest(request)
         );
     }
+    public String extractUsernameByRequest(HttpServletRequest request) throws IllegalArgumentException {
+        return this.extractUsername(
+                extractTokenFromRequest(request)
+        );
+    }
     private Claims extractAllClaims(String token) {
         return Jwts
                 .parserBuilder()

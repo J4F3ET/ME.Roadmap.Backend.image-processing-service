@@ -1,9 +1,9 @@
-package roadmap.backend.image_processing_service.image.application.config.topic;
+package roadmap.backend.image_processing_service.auth.application.config.kafka.topic;
 
 import org.apache.kafka.common.config.TopicConfig;
 
 public class TopicConfigProperties {
-    public static final String TOPIC_NAME = "image-processing-service";//Topic name: Nombre del topic = "image-processing-service"
+    public static final String TOPIC_NAME_ImageProcessingService = "image-processing-service";//Topic name: Nombre del topic = "image-processing-service"
     public static final int PARTITIONS = 2; //Partitions: Numero de particiones
     public static final int REPLICATION_FACTOR = 1;//Replication factor: Factor de replicacion = 1
     public static final String CLEANUP_POLICY_CONFIG_VALUE = TopicConfig.CLEANUP_POLICY_DELETE ;//Cleanup policy: Politca de tratamiento de los datos = "delete"

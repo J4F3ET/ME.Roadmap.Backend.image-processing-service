@@ -2,6 +2,7 @@ package roadmap.backend.image_processing_service.auth.application.interfaces;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+import roadmap.backend.image_processing_service.auth.application.interfaces.apiRest.AuthResponse;
 
 
 @Service

@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.auth.application.config.filter;
+package roadmap.backend.image_processing_service.auth.application.config.security.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
