@@ -1,11 +1,9 @@
 package roadmap.backend.image_processing_service.image.application.service;
 
 import org.apache.kafka.common.errors.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import roadmap.backend.image_processing_service.image.application.interfaces.FolderStorage;
+import roadmap.backend.image_processing_service.image.application.interfaces.repository.FolderStorage;
 
 import java.io.File;
 import java.util.HashMap;

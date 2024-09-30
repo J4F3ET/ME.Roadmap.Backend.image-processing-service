@@ -1,13 +1,12 @@
 package roadmap.backend.image_processing_service.image.infrastructure.controller;
 
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,55 +15,38 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import roadmap.backend.image_processing_service.image.application.config.kafka.topic.TopicConfigProperties;
-import roadmap.backend.image_processing_service.image.application.interfaces.FolderStorage;
-import roadmap.backend.image_processing_service.image.application.interfaces.ImageStorage;
+import roadmap.backend.image_processing_service.image.application.interfaces.Utils;
+import roadmap.backend.image_processing_service.image.application.interfaces.repository.FolderStorage;
+import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorage;
 import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.TransformRequest;
-import roadmap.backend.image_processing_service.image.application.interfaces.kafka.AuthKafkaRequest;
-import roadmap.backend.image_processing_service.image.application.interfaces.kafka.KafkaMethodTypeAuth;
-
-import javax.imageio.ImageIO;
-import java.util.Arrays;
+import roadmap.backend.image_processing_service.image.application.interfaces.event.request.AuthKafkaRequest;
+import roadmap.backend.image_processing_service.image.application.interfaces.event.KafkaEventModuleImage;
+import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorageTemporary;
+import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleAuthModuleImage;
 
 @Controller
 @RequestMapping("/")
 @PreAuthorize("denyAll()")
 public class ImageController {
-    private final FolderStorage folderStorage;
-    private final ImageStorage imageStorage;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final Utils utils;
+    private final ImageStorageTemporary imageStorageTemporary;
+    private final KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage;
     public ImageController(
-            ImageStorage imageStorage,
-            FolderStorage folderStorage,
-    @Qualifier("kafkaTemplateModuleImage") KafkaTemplate<String, String> kafkaTemplate
+            Utils utils, ImageStorageTemporary imageStorageTemporary,
+            KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage
     ) {
-        this.folderStorage = folderStorage;
-        this.imageStorage = imageStorage;
-        this.kafkaTemplate = kafkaTemplate;
+        this.utils = utils;
+        this.imageStorageTemporary = imageStorageTemporary;
+        this.kafkaProducerByModuleAuthModuleImage = kafkaProducerByModuleAuthModuleImage;
     }
-    @NonNull
-    private String extractToken(@NonNull  HttpServletRequest request) throws IllegalArgumentException {
-        final String authorization = request.getHeader("Authorization");
-        if (authorization == null || !authorization.startsWith("Bearer "))
-            return null;
-        return authorization.substring(7);
-    }
-    @NonNull
-    public <T> String jsonString(T object){
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-            return null;
-        }
-    }
+
     @GetMapping("/images/{id}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public @ResponseBody ResponseEntity<String> getImage(@NonNull HttpServletRequest request, @PathVariable("id") Integer id) {
-        final String token = this.extractToken(request);
-        AuthKafkaRequest requestAuth = new AuthKafkaRequest(new String[]{token}, KafkaMethodTypeAuth.USERID_USERNAME_TOKEN);
-        String jsonMessage = jsonString(requestAuth);
-        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_ImageProcessingService, jsonMessage);
-        return ResponseEntity.ok(jsonMessage);
+    public void getImage(
+            @PathVariable("id") Integer id,
+            @NonNull HttpServletResponse response
+    ) {
+
     }
     @GetMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
@@ -76,8 +58,14 @@ public class ImageController {
     @PostMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
     public void uploadImage(@NonNull HttpServletRequest request, @RequestParam("file") MultipartFile file) {
-
+        final String token = utils.extractToken(request);
+        String jsonMessage = utils.converterObjectToStringJson(
+                new AuthKafkaRequest(new String[]{token}, KafkaEventModuleImage.SAVE_IMAGE)
+        );
+        kafkaProducerByModuleAuthModuleImage.send(jsonMessage);
+        imageStorageTemporary.uploadImage(token, file);
     }
+
     @PostMapping("/images/{id}/transform")
     @PreAuthorize("hasRole('ROLE_USER')")
     public @ResponseStatus ResponseEntity<String> transformImage(
@@ -85,9 +73,7 @@ public class ImageController {
             @PathVariable("id") Integer id,
             @RequestBody @Validated TransformRequest transformRequest
     ){
-
         return ResponseEntity.ok("Transformacion realizada");
     }
 }
-
 

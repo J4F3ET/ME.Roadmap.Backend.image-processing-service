@@ -7,61 +7,98 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties;
-import roadmap.backend.image_processing_service.auth.application.interfaces.kafka.*;
-
-import java.util.function.Supplier;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.KafkaEventByModuleImage;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.request.AuthKafkaRequest;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.response.AuthKafkaResponse;
+import roadmap.backend.image_processing_service.auth.infrastructure.producer.KafkaProducerByModuleImageModuleAuth;
+import roadmap.backend.image_processing_service.auth.infrastructure.producer.KafkaProducerByModuleTransformsModuleAuth;
 
 @Slf4j
 @Service
 public class KafkaConsumerModuleAuth {
-    private final KafkaServiceModuleAuth kafkaAuthServices;
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    public KafkaConsumerModuleAuth(KafkaServiceModuleAuth kafkaAuthServices, @Qualifier("kafkaTemplateModuleAuth") KafkaTemplate<String, String> kafkaTemplate) {
-        this.kafkaAuthServices = kafkaAuthServices;
-        this.kafkaTemplate = kafkaTemplate;
+    private final KafkaEventByModuleImage kafkaEventByModuleImage;
+    @Qualifier("kafkaProducerByModuleImageModuleAuth")
+    private final KafkaProducerByModuleImageModuleAuth kafkaProducerByModuleImageModuleAuth;
+    @Qualifier("kafkaProducerByModuleTransformsModuleAuth")
+    private final KafkaProducerByModuleTransformsModuleAuth kafkaProducerByModuleTransformsModuleAuth;
+    public KafkaConsumerModuleAuth(
+            KafkaEventByModuleImage kafkaEventByModuleImage,
+            KafkaProducerByModuleImageModuleAuth kafkaProducerByModuleImageModuleAuth,
+            KafkaProducerByModuleTransformsModuleAuth kafkaProducerByModuleTransformsModuleAuth
+    ){
+        this.kafkaEventByModuleImage = kafkaEventByModuleImage;
+        this.kafkaProducerByModuleImageModuleAuth = kafkaProducerByModuleImageModuleAuth;
+        this.kafkaProducerByModuleTransformsModuleAuth = kafkaProducerByModuleTransformsModuleAuth;
     }
+    @Nullable
     public AuthKafkaRequest jsonToObject(String message) {
         ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.readValue(message, AuthKafkaRequest.class);
         } catch (JsonProcessingException e) {
-            System.out.println(e.getMessage());
             return null;
         }
     }
-    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_ImageProcessingService,groupId = "")
-    public void listen(String message) {
-        log.info("Kafka consumer module image");
-        System.out.println(message);
-        AuthKafkaRequest request = jsonToObject(message);
-        System.out.println(request);
-        if (request == null) {
-            log.info("Kafka consumer module image");
-            return;
+    @NonNull
+    public <T> String jsonString(T object){
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            return null;
         }
-        Supplier<String> supplier = getMethodType(request);
-        if (supplier == null) {
-            log.info("Kafka consumer module image");
-            return;
-        }
-        String result = supplier.get();
-        System.out.println(result);
-        if (result == null) {
-            log.info("Kafka consumer module image");
-            return;
-        }
-        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_ImageProcessingService, result);
     }
     @Nullable
-    private Supplier<String> getMethodType(@NonNull AuthKafkaRequest request) {
-        return switch (request.methodType()) {
-            case USERID_USERNAME_TOKEN -> () -> kafkaAuthServices.userIdUsernameToken(request.args()[0]);
-            case USERNAME_TOKEN -> () -> kafkaAuthServices.usernameToken(request.args()[0]);
-            case USERID_TOKEN -> () -> kafkaAuthServices.userIdToken(request.args()[0]);
-            default -> null;
-        };
+    private AuthKafkaResponse resolveMethodTypeByModuleImage(AuthKafkaRequest request) {
+        switch (request.methodType()) {
+            case SAVE_IMAGE -> {
+                return kafkaEventByModuleImage.saveImage(request.args()[0]);
+            }
+            case UPDATE_IMAGE -> {
+                return kafkaEventByModuleImage.updateImage(request.args()[0]);
+            }
+            case GET_ALL_IMAGES -> {
+                return kafkaEventByModuleImage.getAllImages(request.args()[0]);
+            }
+            case GET_IMAGE -> {
+                return kafkaEventByModuleImage.getImage(request.args()[0]);
+            }
+            case TRANSFORM_IMAGE -> {
+                return kafkaEventByModuleImage.transformImage(request.args()[0]);
+            }
+        }
+        return null;
+    }
+    @Nullable
+    private AuthKafkaResponse resolveMethodTypeByModuleTransform(AuthKafkaRequest request) {
+        return null;
+    }
+    @Nullable
+    private AuthKafkaResponse resolveMethodType(String message) {
+        AuthKafkaRequest request = jsonToObject(message);
+        if (request == null)
+            return null;
+        switch (request.methodType()) {
+            case SAVE_IMAGE, UPDATE_IMAGE, GET_ALL_IMAGES, GET_IMAGE  -> {
+                return resolveMethodTypeByModuleImage(request);
+            }
+            case TRANSFORM_IMAGE -> {
+                 return resolveMethodTypeByModuleTransform(request);
+            }
+        }
+        return null;
+    }
+    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_ImageProcessingService,groupId = "")
+    public void listen(String message) {
+        AuthKafkaResponse result = resolveMethodType(message);
+        String jsonResult = jsonString(result);
+        if (result == null)
+            return;
+        switch (result.destionationEvent()) {
+            case IMAGE -> kafkaProducerByModuleImageModuleAuth.send(jsonResult);
+            case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleAuth.send(jsonResult);
+        }
     }
 }

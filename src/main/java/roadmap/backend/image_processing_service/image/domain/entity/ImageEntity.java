@@ -15,9 +15,10 @@ import java.sql.Timestamp;
 public class ImageEntity {
     @Id
     private Integer id;
-    private String image_name;
-    private String image_path;
+    private String imageName;
+    private String imagePath;
+    private String format;
     private Integer userId;
-    private Timestamp created_at;
-    private Timestamp updated_at;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
 }

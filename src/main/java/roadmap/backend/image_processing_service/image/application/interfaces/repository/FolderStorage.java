@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.image.application.interfaces;
+package roadmap.backend.image_processing_service.image.application.interfaces.repository;
 
 import org.springframework.stereotype.Service;
 

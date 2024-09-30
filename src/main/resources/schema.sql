@@ -10,9 +10,10 @@ create table if not exists users (
 
 create table if not exists image (
     id serial primary key,
-    image_name varchar(255) not null,
-    image_path varchar(255) not null,
+    imageName varchar(255) not null,
+    imagePath varchar(255) not null,
+    format varchar(4) not null,
     userId int not null references users(id),
-    created_at timestamp not null,
-    updated_at timestamp not null
+    createdAt timestamp not null,
+    updatedAt timestamp not null
 );
