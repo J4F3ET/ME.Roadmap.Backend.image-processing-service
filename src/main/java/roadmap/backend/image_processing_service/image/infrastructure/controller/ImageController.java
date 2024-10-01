@@ -58,12 +58,13 @@ public class ImageController {
     @PostMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
     public void uploadImage(@NonNull HttpServletRequest request, @RequestParam("file") MultipartFile file) {
+        System.out.println("Upload");
         final String token = utils.extractToken(request);
         String jsonMessage = utils.converterObjectToStringJson(
                 new AuthKafkaRequest(new String[]{token}, KafkaEventModuleImage.SAVE_IMAGE)
         );
         kafkaProducerByModuleAuthModuleImage.send(jsonMessage);
-        imageStorageTemporary.uploadImage(token, file);
+        //imageStorageTemporary.uploadImage(token, file);
     }
 
     @PostMapping("/images/{id}/transform")

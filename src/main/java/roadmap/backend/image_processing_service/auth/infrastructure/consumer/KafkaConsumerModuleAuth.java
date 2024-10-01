@@ -90,13 +90,13 @@ public class KafkaConsumerModuleAuth {
         }
         return null;
     }
-    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_ImageProcessingService,groupId = "")
+    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Auth,groupId = "")
     public void listen(String message) {
         AuthKafkaResponse result = resolveMethodType(message);
         String jsonResult = jsonString(result);
         if (result == null)
             return;
-        switch (result.destionationEvent()) {
+        switch (result.destinationEvent()) {
             case IMAGE -> kafkaProducerByModuleImageModuleAuth.send(jsonResult);
             case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleAuth.send(jsonResult);
         }

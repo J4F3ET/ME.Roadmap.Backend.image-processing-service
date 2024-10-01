@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
-import roadmap.backend.image_processing_service.image.application.config.kafka.topic.TopicConfigProperties;
+import roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,13 +26,33 @@ public class KafkaTopicConfigModuleAuth {
     }
 
     @Bean
-    @Qualifier("generateTopicImageProcessingServiceModuleAuth")
-    public NewTopic generateTopicImageProcessingServiceModuleAuth() {
+    @Qualifier("generateTopicModuleImageModuleAuth")
+    public NewTopic generateTopicModuleImageModuleAuth() {
         return TopicBuilder
-                .name(TopicConfigProperties.TOPIC_NAME_ImageProcessingService)
+                .name(TopicConfigProperties.TOPIC_NAME_Image)
                 .partitions(TopicConfigProperties.PARTITIONS)
                 .replicas(TopicConfigProperties.REPLICATION_FACTOR)
-                .configs(this.getTopicConfig())
+                .configs(getTopicConfig())
+                .build();
+    }
+    @Bean
+    @Qualifier("generateTopicModuleAuthModuleAuth")
+    public NewTopic generateTopicModuleAuthModuleAuth() {
+        return TopicBuilder
+                .name(TopicConfigProperties.TOPIC_NAME_Auth)
+                .partitions(TopicConfigProperties.PARTITIONS)
+                .replicas(TopicConfigProperties.REPLICATION_FACTOR)
+                .configs(getTopicConfig())
+                .build();
+    }
+    @Bean
+    @Qualifier("generateTopicModuleTransformModuleAuth")
+    public NewTopic generateTopicModuleTransformModuleAuth() {
+        return TopicBuilder
+                .name(TopicConfigProperties.TOPIC_NAME_Transform)
+                .partitions(TopicConfigProperties.PARTITIONS)
+                .replicas(TopicConfigProperties.REPLICATION_FACTOR)
+                .configs(getTopicConfig())
                 .build();
     }
 }

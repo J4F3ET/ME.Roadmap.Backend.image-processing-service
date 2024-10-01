@@ -14,7 +14,7 @@ public class KafkaProducerByModuleTransformsModuleAuth {
     private KafkaTemplate<String, String> kafkaTemplate;
     // CAMBIARLE EL NOMBRE DEL TOPIC CUANDO EXITA
     public void send(String message) {
-        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_ImageProcessingService, message);
+        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Image, message);
     }
 
 }

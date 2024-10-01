@@ -23,14 +23,34 @@ public class KafkaTopicConfigModuleImage {
         configs.put(TopicConfig.MAX_MESSAGE_BYTES_CONFIG, TopicConfigProperties.MAX_MESSAGE_BYTES_CONFIG_VALUE);
         return configs;
     }
-   @Bean
-   @Qualifier("generateTopicImageProcessingServiceModuleImage")
-   public NewTopic generateTopicImageProcessingServiceModuleImage() {
-       return TopicBuilder
-               .name(TopicConfigProperties.TOPIC_NAME_ImageProcessingService)
-               .partitions(TopicConfigProperties.PARTITIONS)
-               .replicas(TopicConfigProperties.REPLICATION_FACTOR)
-               .configs(this.getTopicConfig())
-               .build();
-   }
+    @Bean
+    @Qualifier("generateTopicModuleImageModuleImage")
+    public NewTopic generateTopicModuleImageModuleImage() {
+        return TopicBuilder
+                .name(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.TOPIC_NAME_Image)
+                .partitions(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.PARTITIONS)
+                .replicas(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.REPLICATION_FACTOR)
+                .configs(getTopicConfig())
+                .build();
+    }
+    @Bean
+    @Qualifier("generateTopicModuleAuthModuleImage")
+    public NewTopic generateTopicModuleAuthModuleImage() {
+        return TopicBuilder
+                .name(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.TOPIC_NAME_Auth)
+                .partitions(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.PARTITIONS)
+                .replicas(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.REPLICATION_FACTOR)
+                .configs(getTopicConfig())
+                .build();
+    }
+    @Bean
+    @Qualifier("generateTopicModuleTransformModuleImage")
+    public NewTopic generateTopicModuleTransformModuleImage() {
+        return TopicBuilder
+                .name(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.TOPIC_NAME_Transform)
+                .partitions(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.PARTITIONS)
+                .replicas(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.REPLICATION_FACTOR)
+                .configs(getTopicConfig())
+                .build();
+    }
 }

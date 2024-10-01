@@ -14,6 +14,6 @@ public class KafkaProducerByModuleTransformsModuleImage {
 
     public void send(String message) {
         // Cambiar el topic
-        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_ImageProcessingService, message);
+        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Image, message);
     }
 }

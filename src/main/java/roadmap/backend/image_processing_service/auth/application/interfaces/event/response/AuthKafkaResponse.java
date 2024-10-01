@@ -5,4 +5,4 @@ import roadmap.backend.image_processing_service.auth.application.interfaces.even
 
 import java.util.Map;
 
-public record AuthKafkaResponse(ModuleDestionationEvent destionationEvent, Map<String, Object> args, KafkaEventModuleAuth event) { }
+public record AuthKafkaResponse(ModuleDestionationEvent destinationEvent, Map<String, Object> args, KafkaEventModuleAuth event) { }

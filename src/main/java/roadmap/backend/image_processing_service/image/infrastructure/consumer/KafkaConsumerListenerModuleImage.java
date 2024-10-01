@@ -14,7 +14,6 @@ import roadmap.backend.image_processing_service.image.application.interfaces.rep
 import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleTransformsModuleImage;
 import roadmap.backend.image_processing_service.image.application.config.kafka.topic.TopicConfigProperties;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.response.ImageKafkaResponse;
-import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorage;
 import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleAuthModuleImage;
 
 @Slf4j
@@ -47,12 +46,13 @@ public class KafkaConsumerListenerModuleImage {
         try {
             return mapper.readValue(message, ImageKafkaRequest.class);
         } catch (JsonProcessingException e) {
+            System.out.println("Error jsonToObject" + e);
             return null;
         }
     }
     private void resolveMethodTypeByModuleImage(ImageKafkaRequest request) {
         System.out.println("Resolve method type by module image");
-        switch (request.methodType()) {
+        switch (request.event()) {
             case SAVE_IMAGE -> kafkaServiceModuleImage.saveImage(request.args());
             case UPDATE_IMAGE -> kafkaServiceModuleImage.updateImage(request.args());
         }
@@ -68,7 +68,7 @@ public class KafkaConsumerListenerModuleImage {
         if (request == null)
             return null;
 
-        switch (request.methodType()) {
+        switch (request.event()) {
             case SAVE_IMAGE, UPDATE_IMAGE, GET_ALL_IMAGES, GET_IMAGE  -> {
                 resolveMethodTypeByModuleImage(request);
             }
@@ -78,7 +78,7 @@ public class KafkaConsumerListenerModuleImage {
         }
         return null;
     }
-    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_ImageProcessingService,groupId = "")
+    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Image,groupId = "")
     public void listen(String message) {
         System.out.println("Listen");
         ImageKafkaResponse kafkaResponse = resolveMethodType(message);

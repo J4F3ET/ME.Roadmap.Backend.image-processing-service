@@ -13,6 +13,6 @@ public class KafkaProducerByModuleAuthModuleImage {
     @Qualifier("kafkaTemplateModuleImage")
     private KafkaTemplate<String, String> kafkaTemplate;
     public void send(String message) {
-        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_ImageProcessingService, message);
+        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Auth, message);
     }
 }
