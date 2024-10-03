@@ -14,7 +14,6 @@ public class KafkaProducerByModuleImageModuleAuth {
     private KafkaTemplate<String, String> kafkaTemplate;
 
     public void send(String message) {
-        System.out.println("Sending message a image desde el auth");
         kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Image, message);
     }
 

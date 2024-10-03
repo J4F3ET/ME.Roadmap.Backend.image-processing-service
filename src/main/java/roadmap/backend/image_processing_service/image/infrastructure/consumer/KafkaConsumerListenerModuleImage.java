@@ -9,70 +9,55 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.image.application.interfaces.Utils;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.KafkaServiceModuleImage;
-import roadmap.backend.image_processing_service.image.application.interfaces.event.request.ImageKafkaRequest;
+import roadmap.backend.image_processing_service.image.application.interfaces.event.request.RequestKafkaImage;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorageTemporary;
 import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleTransformsModuleImage;
 import roadmap.backend.image_processing_service.image.application.config.kafka.topic.TopicConfigProperties;
-import roadmap.backend.image_processing_service.image.application.interfaces.event.response.ImageKafkaResponse;
 import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleAuthModuleImage;
 
 @Slf4j
 @Service
 public class KafkaConsumerListenerModuleImage {
 
-    private final ImageStorageTemporary imageStorageTemporary;
     @Qualifier("kafkaProducerByModuleAuthModuleImage")
     private final KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage;
     @Qualifier("kafkaProducerByModuleTransformsModuleImage")
     private final KafkaProducerByModuleTransformsModuleImage kafkaProducerByModuleTransformsModuleImage;
     private final KafkaServiceModuleImage kafkaServiceModuleImage;
-    private final Utils utils;
 
     public KafkaConsumerListenerModuleImage(
-            ImageStorageTemporary imageStorageTemporary,
             KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage,
             KafkaProducerByModuleTransformsModuleImage kafkaProducerByModuleTransformsModuleImage,
-            KafkaServiceModuleImage kafkaServiceModuleImage, Utils utils
+            KafkaServiceModuleImage kafkaServiceModuleImage
     ) {
-        this.imageStorageTemporary = imageStorageTemporary;
         this.kafkaProducerByModuleAuthModuleImage = kafkaProducerByModuleAuthModuleImage;
         this.kafkaProducerByModuleTransformsModuleImage = kafkaProducerByModuleTransformsModuleImage;
         this.kafkaServiceModuleImage = kafkaServiceModuleImage;
-        this.utils = utils;
     }
     @Nullable
-    public ImageKafkaRequest jsonToObject(String message) {
+    public RequestKafkaImage jsonToObject(String message) {
         ObjectMapper mapper = new ObjectMapper();
         try {
-            return mapper.readValue(message, ImageKafkaRequest.class);
+            return mapper.readValue(message, RequestKafkaImage.class);
         } catch (JsonProcessingException e) {
-            System.out.println("Error jsonToObject" + e);
             return null;
         }
     }
-    private void resolveMethodTypeByModuleImage(ImageKafkaRequest request) {
-        System.out.println("Resolve method type by module image");
+    private void resolveMethodTypeByModuleImage(RequestKafkaImage request) {
         switch (request.event()) {
             case SAVE_IMAGE -> kafkaServiceModuleImage.saveImage(request.args());
             case UPDATE_IMAGE -> kafkaServiceModuleImage.updateImage(request.args());
         }
     }
-    private ImageKafkaResponse resolveMethodTypeByModuleTransform(ImageKafkaRequest request) {
+    private String resolveMethodTypeByModuleTransform(RequestKafkaImage request) {
         return null;
     }
-    private ImageKafkaResponse resolveMethodType(String message) {
-        System.out.println("Resolve method type");
-        ImageKafkaRequest request = jsonToObject(message);
-        System.out.println("Message: " + message);
-        System.out.println("Request: " + request);
-        if (request == null)
-            return null;
-
-        switch (request.event()) {
-            case SAVE_IMAGE, UPDATE_IMAGE, GET_ALL_IMAGES, GET_IMAGE  -> {
+    private String resolveMethodType(RequestKafkaImage request) {
+        switch (request.destinationEvent()) {
+            case IMAGE  -> {
                 resolveMethodTypeByModuleImage(request);
             }
-            case TRANSFORM_IMAGE -> {
+            case TRANSFORMATION -> {
                 return resolveMethodTypeByModuleTransform(request);
             }
         }
@@ -80,14 +65,15 @@ public class KafkaConsumerListenerModuleImage {
     }
     @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Image,groupId = "")
     public void listen(String message) {
-        System.out.println("Listen");
-        ImageKafkaResponse kafkaResponse = resolveMethodType(message);
-        String jsonMessage = utils.converterObjectToStringJson(kafkaResponse);
+        RequestKafkaImage request = jsonToObject(message);
+        if (request == null)
+            return;
+        String kafkaResponse = resolveMethodType(request);
         if (kafkaResponse == null)
             return;
-        switch (kafkaResponse.destinationEvent()) {
-            case AUTH -> kafkaProducerByModuleAuthModuleImage.send(jsonMessage);
-            case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleImage.send(jsonMessage);
+        switch (request.destinationEvent()) {
+            case AUTH -> kafkaProducerByModuleAuthModuleImage.send(kafkaResponse);
+            case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleImage.send(kafkaResponse);
         }
     }
 }

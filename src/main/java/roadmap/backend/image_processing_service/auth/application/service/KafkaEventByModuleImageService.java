@@ -1,52 +1,54 @@
 package roadmap.backend.image_processing_service.auth.application.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.NonNull;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.interfaces.event.KafkaEventByModuleImage;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.KafkaEventModuleAuth;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.ModuleDestionationEvent;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.response.AuthKafkaResponse;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.component.KafkaEventModuleAuth;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.component.ModuleDestionationEvent;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.request.RequestKafkaAuth;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.response.ResponseKafkaByImage;
 
 import java.util.Map;
 
 @Service
 public class KafkaEventByModuleImageService implements KafkaEventByModuleImage {
+
     private final JwtUtils jwtUtils;
 
     public KafkaEventByModuleImageService(JwtUtils jwtUtils) {
         this.jwtUtils = jwtUtils;
     }
+
+
     @Override
-    public AuthKafkaResponse saveImage(String token) {
-        System.out.println("Save image desde module auth");
-        // Necesita el id del usuario
+    public ResponseKafkaByImage saveImage(RequestKafkaAuth request) {
+        String token = request.args().get("token").toString();
+        if (token == null)
+            return null;
         Integer userId = jwtUtils.extractId(token);
-        return new AuthKafkaResponse(
+        return new ResponseKafkaByImage(
                 ModuleDestionationEvent.IMAGE,
-                Map.of("userId", userId),
+                Map.of("userId", userId,"token", token),
                 KafkaEventModuleAuth.SAVE_IMAGE
         );
     }
 
     @Override
-    public AuthKafkaResponse updateImage(String token) {
+    public ResponseKafkaByImage updateImage(RequestKafkaAuth request) {
         return null;
     }
 
     @Override
-    public AuthKafkaResponse getImage(String token) {
+    public ResponseKafkaByImage getImage(RequestKafkaAuth request) {
         return null;
     }
 
     @Override
-    public AuthKafkaResponse getAllImages(String token) {
+    public ResponseKafkaByImage getAllImages(RequestKafkaAuth request) {
         return null;
     }
 
     @Override
-    public AuthKafkaResponse transformImage(String token) {
+    public ResponseKafkaByImage transformImage(RequestKafkaAuth request) {
         return null;
     }
 }

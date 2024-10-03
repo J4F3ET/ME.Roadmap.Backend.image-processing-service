@@ -13,18 +13,24 @@ public class FolderStorageService implements FolderStorage {
     @Value("${folder.path}")
     private String folderPath;
 
+    void init() {
+        final File folder = new File(folderPath);
+        if (!folder.exists())
+            folder.mkdirs();
+    }
+
     @Override
     public String createFolder(String folderName) {
         File folder = getFolder(folderName);
-        if (!folder.exists()) {
-            folder.mkdir();
-        }
+        if (!folder.exists())
+            folder.mkdirs();
         return folder.getAbsolutePath();
     }
 
     @Override
     public boolean deleteFolder(String folderName) {
         File folder = getFolder(folderName);
+        System.out.println(folder.getAbsolutePath());
         if (folder.exists()) {
             return folder.delete();
         }

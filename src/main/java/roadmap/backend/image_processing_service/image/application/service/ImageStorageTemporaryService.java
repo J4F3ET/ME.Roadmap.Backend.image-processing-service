@@ -1,4 +1,5 @@
 package roadmap.backend.image_processing_service.image.application.service;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.FolderStorage;
@@ -10,12 +11,15 @@ public class ImageStorageTemporaryService  implements ImageStorageTemporary {
     private final String folderLabel = "image";
     private final FolderStorage folderStorage;
 
+    void init() {
+        folderStorage.createFolder(folderLabel);
+    }
 
     public ImageStorageTemporaryService(FolderStorage folderStorage) {
         this.folderStorage = folderStorage;
     }
 
-
+    @Async
     @Override
     public void uploadImage(String token, MultipartFile image)throws RuntimeException {
         String path = this.folderStorage.createFolder(folderLabel+File.separator+token);
@@ -28,6 +32,7 @@ public class ImageStorageTemporaryService  implements ImageStorageTemporary {
             throw new RuntimeException("Error uploading image, file transfer failed");
         }
     }
+
     @Override
     public File downloadImage(String token) {
         File file = this.folderStorage.getFolder(folderLabel+File.separator+token);
@@ -42,7 +47,7 @@ public class ImageStorageTemporaryService  implements ImageStorageTemporary {
         if (imageFile == null)
             return null;
 
-        this.folderStorage.deleteFolder(token);
+        System.out.println(this.folderStorage.deleteFolder(token));
         return imageFile;
     }
 }
