@@ -1,0 +1,35 @@
+spring:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}  # JWT secret key
+      expiration-time: 3600000 # Expiration time of JWT token
+  datasource:
+    url: jdbc:postgresql://localhost:5400/db_image_processing_service
+    username: user_image_processing_service
+    password: secret
+    driver-class-name: org.postgresql.Driver
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: image-processing-service
+      auto-offset-reset: earliest
+  docker:
+    compose:
+      lifecycle-management: start_only     # Esta configuracion indica que la aplicacion solamente se ejecutara cuando el contenerdor esta levantado
+  cloud:
+    azure:
+      storage:
+        account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
+        account-key: "${AZURE_STORAGE_ACCOUNT_KEY}"
+        endpoint: "https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/"
+        blob:
+          container-name: images
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 15MB
+  folder:
+    path: ${PATH_FOLDER}/temp
+  sql:
+    init:
+      mode: always # Esta configuracion indica que la base de datos se creara automaticamente cuando se levante el contenedor
