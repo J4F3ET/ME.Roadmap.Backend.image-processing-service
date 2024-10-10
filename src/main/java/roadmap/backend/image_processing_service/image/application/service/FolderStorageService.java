@@ -4,13 +4,12 @@ import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.FolderStorage;
-
 import java.io.File;
 import java.util.HashMap;
 
 @Service
 public class FolderStorageService implements FolderStorage {
-    @Value("${folder.path}")
+    @Value("${spring.folder.path}")
     private String folderPath;
 
     void init() {
@@ -30,11 +29,22 @@ public class FolderStorageService implements FolderStorage {
     @Override
     public boolean deleteFolder(String folderName) {
         File folder = getFolder(folderName);
-        System.out.println(folder.getAbsolutePath());
-        if (folder.exists()) {
+        if (!folder.exists())
+            return true;
+
+        File[] files = folder.listFiles();
+        if (files == null)
             return folder.delete();
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                deleteFolder(file.getName());
+            } else {
+                file.delete();
+            }
         }
-        return false;
+
+        return folder.delete();
     }
 
     @Override

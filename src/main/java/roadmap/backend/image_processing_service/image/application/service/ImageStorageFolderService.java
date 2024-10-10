@@ -8,6 +8,8 @@ import roadmap.backend.image_processing_service.image.application.interfaces.rep
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 @Service
 public class ImageStorageFolderService implements ImageStorage {
@@ -40,7 +42,7 @@ public class ImageStorageFolderService implements ImageStorage {
     }
 
     @Override
-    public File getImageFile(Integer Id) {
+    public Future<File> getImageFile(Integer Id) {
         return null;
     }
 
@@ -60,7 +62,7 @@ public class ImageStorageFolderService implements ImageStorage {
     }
 
     @Override
-    public HashMap<String, File> getAllImages(Integer Id) {
+    public Future<HashMap<String, File>> getAllImages(Integer Id) {
         return null;
     }
 }

@@ -1,7 +1,7 @@
 package roadmap.backend.image_processing_service.image.application.service;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.scheduling.annotation.Async;
+//import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.KafkaServiceModuleImage;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorage;
@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Map;
+import java.util.concurrent.Future;
+
 @Service
 public class KafkaServiceModuleImageImpl implements KafkaServiceModuleImage {
 
@@ -29,14 +31,15 @@ public class KafkaServiceModuleImageImpl implements KafkaServiceModuleImage {
          } catch (IOException e) {
              e.printStackTrace();
          }
-         return new MockMultipartFile(file.getName(), file.getName(),contentType, content);
+         return null;// new MockMultipartFile(file.getName(), file.getName(),contentType, content);
     }
+    @Transactional
     @Override
     public void saveImage(Map<String, Object> args) {
         try {
-            File file = imageStorageTemporary.downloadImage(args.get("token").toString());
-            MultipartFile multipartFile = parseFileToMultipartFile(file);
-            imageStorage.saveImage(Integer.parseInt(args.get("userId").toString()), multipartFile);
+            MultipartFile file = imageStorageTemporary.downloadImage(args.get("token").toString());
+            if (file == null) throw new Exception("No se pudo encontrar la imagen");
+            //imageStorage.saveImage(Integer.parseInt(args.get("userId").toString()), file);
         } catch (Exception e) {
             System.out.println("Error al guardar imagen");
             System.out.println(e.getMessage());

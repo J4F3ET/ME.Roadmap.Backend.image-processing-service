@@ -7,5 +7,5 @@ import java.io.File;
 @Service
 public interface ImageStorageTemporary {
     void uploadImage(String token, MultipartFile file);
-    File downloadImage(String token);
+    MultipartFile downloadImage(String token);
 }

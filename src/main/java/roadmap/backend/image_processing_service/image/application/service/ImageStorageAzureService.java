@@ -3,10 +3,8 @@ package roadmap.backend.image_processing_service.image.application.service;
 import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobContainerClientBuilder;
 import jakarta.annotation.Nullable;
 import lombok.NonNull;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,33 +16,23 @@ import roadmap.backend.image_processing_service.image.domain.entity.ImageEntity;
 import java.io.*;
 import java.sql.Timestamp;
 import java.util.HashMap;
+import java.util.concurrent.Future;
+
+import static java.io.File.separator;
 
 @Service
 @Primary
 public class ImageStorageAzureService implements ImageStorage {
-
-    @Value("${azure.storage.connection-string}")
-    private final String connectionString;
-
-    @Value("${azure.storage.container-name}")
-    private final String containerName;
 
     private final BlobContainerClient containerClient;
 
     private final ImageRepository imageRepository;
 
     public ImageStorageAzureService(
-            @Value("${azure.storage.connection-string}") String connectionString,
-            @Value("${azure.storage.container-name}") String containerName,
-            ImageRepository imageRepository
+            BlobContainerClient containerClient, ImageRepository imageRepository
     ) {
-        this.connectionString = connectionString;
-        this.containerName = containerName;
+        this.containerClient = containerClient;
         this.imageRepository = imageRepository;
-        this.containerClient = new BlobContainerClientBuilder()
-                .connectionString(connectionString)
-                .containerName(containerName)
-                .buildClient();
     }
 
     @Nullable
@@ -63,25 +51,19 @@ public class ImageStorageAzureService implements ImageStorage {
         imageEntity.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         return imageEntity;
     }
-    @Transactional
-    @Nullable
+    private BlobClient getBlobClient(String path) {
+        return containerClient.getBlobClient(path);
+    }
     @Override
     public String saveImage(Integer userId, MultipartFile file) {
-        InputStream inputStream = parseInputStream(file);
-
-        if (inputStream == null)
-            return null;
-
-        ImageEntity imageEntity = parseImageEntity(file);
-        imageEntity.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-
-        BlobClient blobClient = containerClient.getBlobClient(imageEntity.getImagePath());
-        blobClient.upload(inputStream, file.getSize());
-
-        imageEntity.setImagePath(blobClient.getBlobUrl());
-        imageRepository.save(imageEntity);
-
-        return imageEntity.getImagePath();
+        try (InputStream inputStream = file.getInputStream()) {
+            BlobClient blobClient = getBlobClient(userId + separator + file.getOriginalFilename());
+            blobClient.upload(inputStream, file.getSize());
+            return blobClient.getBlobUrl();
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+            return "Error: " + e.getMessage();
+        }
     }
     @Nullable
     @Override
@@ -94,7 +76,7 @@ public class ImageStorageAzureService implements ImageStorage {
 
 
     @Override
-    public File getImageFile(Integer id) {
+    public Future<File> getImageFile(Integer id) {
         ImageEntity imageEntity = imageRepository.findById(id).orElse(null);
         if (imageEntity == null)
             return null;
@@ -132,7 +114,7 @@ public class ImageStorageAzureService implements ImageStorage {
     }
 
     @Override
-    public HashMap<String, File> getAllImages(Integer Id) {
+    public Future<HashMap<String, File>> getAllImages(Integer Id) {
         return null;
     }
 }

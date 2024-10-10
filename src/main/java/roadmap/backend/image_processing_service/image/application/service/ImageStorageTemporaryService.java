@@ -1,10 +1,16 @@
 package roadmap.backend.image_processing_service.image.application.service;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.FolderStorage;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorageTemporary;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+
 @Service
 public class ImageStorageTemporaryService  implements ImageStorageTemporary {
 
@@ -32,22 +38,38 @@ public class ImageStorageTemporaryService  implements ImageStorageTemporary {
             throw new RuntimeException("Error uploading image, file transfer failed");
         }
     }
+    MultipartFile parseFileToMultipartFile(File file) {
+        String contentType = "image/" + file.getName().split("\\.")[1];
+        try (InputStream inputStream = new FileInputStream(file)){
+            return new MockMultipartFile(file.getName(), file.getName(),contentType,inputStream);
+        } catch (IOException e) {
+            System.out.println("Error reading file");
+            return null;
+        }
 
+    }
     @Override
-    public File downloadImage(String token) {
+    public MultipartFile downloadImage(String token)throws RuntimeException {
+
         File file = this.folderStorage.getFolder(folderLabel+File.separator+token);
         if (file == null)
-            return null;
+            throw new RuntimeException("No se pudo encontrar el fichero");
 
         File[] files = file.listFiles();
         if (files == null)
-            return null;
+            throw new RuntimeException("No se pudo encontrar archivos en el directorio");
 
         File imageFile = files[0];
         if (imageFile == null)
-            return null;
+            throw new RuntimeException("No se pudo encontrar el archivo");
 
-        System.out.println(this.folderStorage.deleteFolder(token));
-        return imageFile;
+        MultipartFile multipartFile = parseFileToMultipartFile(imageFile);
+        if (multipartFile == null)
+            throw new RuntimeException("No se pudo convertir el archivo a MultipartFile");
+
+        if (!this.folderStorage.deleteFolder(folderLabel+File.separator+token))
+            throw new RuntimeException("No se pudo eliminar el directorio");
+
+        return multipartFile;
     }
 }
