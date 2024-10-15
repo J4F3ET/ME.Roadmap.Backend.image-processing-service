@@ -27,8 +27,9 @@ public class KafkaEventByModuleImageService implements KafkaEventByModuleImage {
         Integer userId = jwtUtils.extractId(token);
         return new ResponseKafkaByImage(
                 ModuleDestionationEvent.IMAGE,
-                Map.of("userId", userId,"token", token),
-                KafkaEventModuleAuth.SAVE_IMAGE
+                Map.of("user_id", userId,"token", token),
+                KafkaEventModuleAuth.SAVE_IMAGE,
+                request.UUID()
         );
     }
 

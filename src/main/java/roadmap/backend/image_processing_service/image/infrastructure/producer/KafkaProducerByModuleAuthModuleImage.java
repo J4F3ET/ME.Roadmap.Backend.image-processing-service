@@ -1,5 +1,6 @@
 package roadmap.backend.image_processing_service.image.infrastructure.producer;
 
+import org.apache.qpid.proton.codec.security.SaslOutcomeType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -16,5 +17,10 @@ public class KafkaProducerByModuleAuthModuleImage {
     @Async
     public void send(String message) {
         kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Auth, message);
+    }
+    @Async
+    public void send(String message, String UUID) {
+        System.out.println("Sending message with UUID: " + UUID);
+        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Auth, UUID, message);
     }
 }

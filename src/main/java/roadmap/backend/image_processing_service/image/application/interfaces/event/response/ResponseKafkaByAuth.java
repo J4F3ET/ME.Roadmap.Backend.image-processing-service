@@ -5,4 +5,9 @@ import roadmap.backend.image_processing_service.image.application.interfaces.eve
 
 import java.util.Map;
 
-public record ResponseKafkaByAuth(ModuleDestionationEvent destinationEvent, Map<String, Object> args, KafkaEventModuleImage event) { }
+public record ResponseKafkaByAuth(
+        ModuleDestionationEvent destinationEvent,
+        Map<String, Object> args,
+        KafkaEventModuleImage event,
+        String UUID
+) { }
