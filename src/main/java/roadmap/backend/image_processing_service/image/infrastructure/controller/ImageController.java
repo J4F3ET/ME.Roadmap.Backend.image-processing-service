@@ -77,7 +77,6 @@ public class ImageController {
     @PostMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
     public void uploadImage(@NonNull HttpServletRequest request, @RequestParam("file") MultipartFile file){
-        System.out.println("Uploading image...");
         final String token = utils.extractToken(request);
         String jsonMessage = utils.converterObjectToStringJson(
                 new ResponseKafkaByAuth(
@@ -89,7 +88,11 @@ public class ImageController {
         );
         kafkaProducerByModuleAuthModuleImage.send(jsonMessage);
         try{
-            ImageDTO imageDTO = new ImageDTO(file.getOriginalFilename().split("\\.")[0],file.getOriginalFilename().split("\\.")[1], file.getBytes());
+            ImageDTO imageDTO = new ImageDTO(
+                    file.getOriginalFilename().split("\\.")[0],
+                    file.getOriginalFilename().split("\\.")[1],
+                    file.getBytes()
+            );
             imageStorageTemporary.uploadImage(token, imageDTO);
         } catch (Exception e) {
             ResponseEntity.internalServerError().build();

@@ -67,6 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         }catch (Exception e){
+            System.out.println("Error en el filtro de autenticación: " + e.getMessage());
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
 

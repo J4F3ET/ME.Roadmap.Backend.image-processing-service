@@ -24,12 +24,12 @@ public class KafkaServiceModuleImageImpl implements KafkaServiceModuleImage {
     @Override
     public void saveImage(@NonNull Map<String, Object> args) {
         ImageDTO imageDTO = imageStorageTemporary.downloadImageDTO(args.get("token").toString());
-        if (imageDTO == null) return;
+        if (imageDTO == null || imageDTO.image().length == 0)
+            return;
+
         CompletableFuture<String> result= this.imageStorage.saveImage(
                 Integer.parseInt(args.get("user_id").toString()),
-                imageDTO.name(),
-                imageDTO.format(),
-                imageDTO.image()
+                imageDTO
         );
         result.thenAccept(System.out::println);
     }

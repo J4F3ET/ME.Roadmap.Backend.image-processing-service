@@ -19,13 +19,10 @@ import roadmap.backend.image_processing_service.image.domain.entity.ImageEntity;
 import java.io.*;
 import java.sql.Timestamp;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static java.io.File.separator;
 
 @Service
-@Primary
 public class ImageStorageAzureService implements ImageStorage {
 
     private final BlobContainerClient containerClient;
@@ -38,21 +35,11 @@ public class ImageStorageAzureService implements ImageStorage {
         this.imageRepository = imageRepository;
     }
     @NonNull
-    private ImageEntity parseImageEntity(Integer userId,String name,String format,String path){
-        ImageEntity imageEntity = new ImageEntity();
-        imageEntity.setImageName(name);
-        imageEntity.setFormat(format);
-        imageEntity.setUserId(userId);
-        imageEntity.setImagePath(path);
-        imageEntity.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-        return imageEntity;
-    }
-    @NonNull
     private BlobClient getBlobClient(@NonNull String path) {
         return containerClient.getBlobClient(path);
     }
 
-    private boolean saveImageInCloud(BlobClient blobClient,byte[] image) {
+    private boolean saveImageInCloud(@NonNull BlobClient blobClient, byte @NonNull [] image) {
         try(InputStream inputStream = new ByteArrayInputStream(image)) {
             blobClient.upload(inputStream, inputStream.available());
             return true;
@@ -64,8 +51,12 @@ public class ImageStorageAzureService implements ImageStorage {
     }
 
     private boolean saveImageInRepository(Integer userId, String name, String format, String path) {
-        ImageEntity imageEntity = parseImageEntity(userId,name, format, path);
+        if(imageRepository.existsByImageName(name))
+            return false;
+
+        ImageEntity imageEntity = new ImageEntity(name, format, path, userId);
         imageEntity.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+
         try {
             imageRepository.save(imageEntity);
             return true;
@@ -77,32 +68,49 @@ public class ImageStorageAzureService implements ImageStorage {
     @Async
     @Transactional
     @Override
-    public CompletableFuture<String> saveImage(Integer userId, String nameImage, String formatImage, byte[] image) {
+    public CompletableFuture<String> saveImage(
+            @NonNull Integer userId,
+            @NonNull String nameImage,
+            @NonNull String formatImage,
+            byte @NonNull [] image
+    ) {
+
         final CompletableFuture<String> completableFuture = new CompletableFuture<>();
-        BlobClient blobClient = getBlobClient(userId + separator + nameImage+"."+formatImage);
-        if(!saveImageInRepository(userId, nameImage, formatImage, blobClient.getBlobUrl())) {
+        BlobClient blobClient = getBlobClient(userId.toString() + "/" + nameImage+"."+formatImage);
+        String path = blobClient.getBlobUrl().replace("%2F", "/");
+
+        if(!saveImageInRepository(userId, nameImage, formatImage, path)) {
             completableFuture.complete("Error in saveImage: Repository");
             return completableFuture;
         }
+
         if(! saveImageInCloud(blobClient, image)) {
             completableFuture.complete("Error in saveImage: Cloud");
             return completableFuture;
         }
+
+        completableFuture.complete(path);
         return completableFuture;
     }
     @Async
     @Transactional
-    protected CompletableFuture<String> saveImage(Integer userId, @NonNull ImageDTO imageDTO) {
+    @Override
+    public CompletableFuture<String> saveImage(@NonNull Integer userId, @NonNull ImageDTO imageDTO) {
+
         CompletableFuture<String> completableFuture = new CompletableFuture<>();
-        BlobClient blobClient = getBlobClient(userId + separator + imageDTO.name()+"."+imageDTO.format());
-        if(!saveImageInRepository(userId, imageDTO.name(), imageDTO.format(), blobClient.getBlobUrl())) {
+        BlobClient blobClient = getBlobClient(userId.toString() + '/' + imageDTO.name()+"."+imageDTO.format());
+        String path = blobClient.getBlobUrl().replace("%2F", "/");
+
+        if(!saveImageInRepository(userId, imageDTO.name(), imageDTO.format(), path)) {
             completableFuture.complete("Error in saveImage: Repository");
             return completableFuture;
         }
+
         if(! saveImageInCloud(blobClient, imageDTO.image())) {
             completableFuture.complete("Error in saveImage: Cloud");
             return completableFuture;
         }
+
         completableFuture.complete(blobClient.getBlobUrl());
         return completableFuture;
     }
@@ -148,12 +156,13 @@ public class ImageStorageAzureService implements ImageStorage {
     @Transactional
     @Override
     public CompletableFuture<String> updateImage(Integer userId,String nameImage,String formatImage, byte[] image) {
-        final CompletableFuture<Boolean> imageExists = isImageExists(userId, nameImage);
+
+        final boolean imageExists = imageRepository.existsByImageName(nameImage);
         final CompletableFuture<String> completableFuture = new CompletableFuture<>();
 
+        if(!imageExists) return null;
         try {
-            if(!imageExists.get())
-                throw new Exception("Image not found");
+
             final CompletableFuture<String> saveImageResult = saveImage(userId, nameImage, formatImage, image);
             if (saveImageResult.get().contains("Error"))
                 throw new Exception("Error saving image");

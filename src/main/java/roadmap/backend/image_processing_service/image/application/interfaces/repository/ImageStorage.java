@@ -1,5 +1,6 @@
 package roadmap.backend.image_processing_service.image.application.interfaces.repository;
 
+import lombok.NonNull;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +15,8 @@ import java.util.concurrent.Future;
 public interface ImageStorage {
     @Async
     CompletableFuture<String> saveImage(Integer userId,String nameImage,String formatImage, byte[] image);
+    @Async
+    CompletableFuture<String> saveImage(Integer userId, @NonNull ImageDTO imageDTO);
     @Async
     CompletableFuture<String> getImageUrl(Integer imageId);
     @Async

@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface ImageRepository extends CrudRepository<ImageEntity, Integer> {
     List<ImageEntity> findByUserId(Integer userId);
     Optional<ImageEntity> findByUserIdAndImageName(Integer userId, String imageName);
+    boolean existsByImageName(String imageName);
     Optional<ImageEntity> findByIdAndUserId(Integer id, Integer userId);
     List<ImageEntity> findByUserId(Integer userId, Pageable pageable);
 }

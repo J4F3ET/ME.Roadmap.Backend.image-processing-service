@@ -12,6 +12,7 @@ import java.sql.Timestamp;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table("image")
 public class ImageEntity {
     @Id
@@ -28,4 +29,12 @@ public class ImageEntity {
     private Timestamp createdAt;
     @Column("updated_at")
     private Timestamp updatedAt;
+    public ImageEntity( String imageName, String format, String imagePath, Integer userId) {
+        this.imageName = imageName;
+        this.format = format;
+        this.imagePath = imagePath;
+        this.userId = userId;
+        this.createdAt = new Timestamp(System.currentTimeMillis());
+        this.updatedAt = new Timestamp(System.currentTimeMillis());
+    }
 }
