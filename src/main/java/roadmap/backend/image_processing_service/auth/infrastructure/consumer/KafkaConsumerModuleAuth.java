@@ -3,7 +3,9 @@ package roadmap.backend.image_processing_service.auth.infrastructure.consumer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.lang.Nullable;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,8 @@ import roadmap.backend.image_processing_service.auth.application.interfaces.even
 import roadmap.backend.image_processing_service.auth.application.interfaces.event.response.ResponseKafkaByImage;
 import roadmap.backend.image_processing_service.auth.infrastructure.producer.KafkaProducerByModuleImageModuleAuth;
 import roadmap.backend.image_processing_service.auth.infrastructure.producer.KafkaProducerByModuleTransformsModuleAuth;
+
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -90,13 +94,14 @@ public class KafkaConsumerModuleAuth {
         return null;
     }
     @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Auth,groupId = "")
-    public void listen(String message) {
-        ResponseKafkaByImage result = resolveMethodType(message);
+    public void listen(@NonNull ConsumerRecord<String, String> record) {
+
+        ResponseKafkaByImage result = resolveMethodType(record.value());
         String jsonResult = jsonString(result);
-        if (result == null)
-            return;
+        if (result == null) return;
+
         switch (result.destinationEvent()) {
-            case IMAGE -> kafkaProducerByModuleImageModuleAuth.send(jsonResult);
+            case IMAGE -> kafkaProducerByModuleImageModuleAuth.send(jsonResult, record.key());
             case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleAuth.send(jsonResult);
         }
     }

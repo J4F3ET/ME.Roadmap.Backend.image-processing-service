@@ -45,7 +45,16 @@ public class KafkaEventByModuleImageService implements KafkaEventByModuleImage {
 
     @Override
     public ResponseKafkaByImage getAllImages(RequestKafkaAuth request) {
-        return null;
+        String token = request.args().get("token").toString();
+        if (token == null)
+            return null;
+        Integer userId = jwtUtils.extractId(token);
+        return new ResponseKafkaByImage(
+                ModuleDestionationEvent.IMAGE,
+                Map.of("user_id", userId,"token", token),
+                KafkaEventModuleAuth.GET_ALL_IMAGES,
+                request.UUID()
+        );
     }
 
     @Override

@@ -227,7 +227,6 @@ public class ImageStorageAzureService implements ImageStorage {
     }
     @NonNull
     private HashMap<String, String> parseListToHashMap(@NonNull List<ImageGetAllResponse> list) {
-        System.out.println(list.size());
         return (HashMap<String, String>)list.stream().collect(
             Collectors.toMap(
                 ImageGetAllResponse::imageName,

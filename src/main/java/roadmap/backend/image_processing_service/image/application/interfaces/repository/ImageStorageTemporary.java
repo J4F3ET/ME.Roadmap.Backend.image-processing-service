@@ -10,7 +10,7 @@ import java.io.IOException;
 @Service
 public interface ImageStorageTemporary {
     void uploadImage(String token, MultipartFile file) throws IOException;
-    void uploadImage(String token, ImageDTO imageDTO);
+    void uploadImage(String token, ImageDTO imageDTO) throws Exception;
     MultipartFile downloadFileImage(String token);
     ImageDTO downloadImageDTO(String token);
 }

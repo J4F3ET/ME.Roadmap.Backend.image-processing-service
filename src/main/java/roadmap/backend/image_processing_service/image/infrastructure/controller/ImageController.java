@@ -16,11 +16,13 @@ import roadmap.backend.image_processing_service.image.application.interfaces.Uti
 import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.TransformRequest;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.KafkaEventModuleImage;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.ModuleDestionationEvent;
+import roadmap.backend.image_processing_service.image.application.interfaces.event.request.RequestKafkaImage;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.response.ResponseKafkaByAuth;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorage;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorageTemporary;
 import roadmap.backend.image_processing_service.image.application.service.ImageStorageAzureService;
 import roadmap.backend.image_processing_service.image.domain.dto.ImageDTO;
+import roadmap.backend.image_processing_service.image.infrastructure.consumer.KafkaConsumerListenerModuleImage;
 import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleAuthModuleImage;
 
 import java.util.HashMap;
@@ -36,16 +38,18 @@ public class ImageController {
     private final Utils utils;
     private final ImageStorageTemporary imageStorageTemporary;
     private final KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage;
+    private final KafkaConsumerListenerModuleImage kafkaConsumerListenerModuleImage;
     private final ImageStorage imageStorage;
 
     public ImageController(
             Utils utils, ImageStorageTemporary imageStorageTemporary,
-            KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage,
+            KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage, KafkaConsumerListenerModuleImage kafkaConsumerListenerModuleImage,
             ImageStorage imageStorage
     ){
         this.utils = utils;
         this.imageStorageTemporary = imageStorageTemporary;
         this.kafkaProducerByModuleAuthModuleImage = kafkaProducerByModuleAuthModuleImage;
+        this.kafkaConsumerListenerModuleImage = kafkaConsumerListenerModuleImage;
         this.imageStorage = imageStorage;
     }
 
@@ -60,13 +64,24 @@ public class ImageController {
     @GetMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<HashMap<String,String>> getImages(
+            @NonNull HttpServletRequest request,
             @RequestParam(value = "page",defaultValue = "0") Integer page,
             @RequestParam(value ="limit",defaultValue = "10") Integer limit
     ) {
+        String uuid = UUID.randomUUID().toString();
+        String jsonMessage = utils.converterObjectToStringJson(
+                new ResponseKafkaByAuth(
+                        ModuleDestionationEvent.IMAGE,
+                        Map.of("token", utils.extractToken(request)),
+                        KafkaEventModuleImage.GET_ALL_IMAGES,
+                        uuid
+                )
+        );
+        CompletableFuture<RequestKafkaImage> result = kafkaProducerByModuleAuthModuleImage.sendWithUUID(jsonMessage,uuid);
         try {
-            return imageStorage.getAllImages(10, page, limit)
-                    .thenApply(ResponseEntity::ok).get();
-
+            Integer idUser = Integer.parseInt(result.thenApply(r->r.args().get("user_id").toString()).get());
+            result.thenAccept(kafkaProducerByModuleAuthModuleImage::remove);
+            return imageStorage.getAllImages(idUser, page, limit).thenApply(ResponseEntity::ok).get();
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -75,14 +90,15 @@ public class ImageController {
     }
     @PostMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public void uploadImage(@NonNull HttpServletRequest request, @RequestParam("file") MultipartFile file){
+    public ResponseEntity<String> uploadImage(@NonNull HttpServletRequest request, @RequestParam("file") MultipartFile file){
         final String token = utils.extractToken(request);
+        final String uuid = UUID.randomUUID().toString();
         String jsonMessage = utils.converterObjectToStringJson(
                 new ResponseKafkaByAuth(
                         ModuleDestionationEvent.IMAGE,
                         Map.of("token", token),
                         KafkaEventModuleImage.SAVE_IMAGE,
-                        UUID.randomUUID().toString()
+                        uuid
                 )
         );
         kafkaProducerByModuleAuthModuleImage.send(jsonMessage);
@@ -93,8 +109,10 @@ public class ImageController {
                     file.getBytes()
             );
             imageStorageTemporary.uploadImage(token, imageDTO);
+            return ResponseEntity.ok("Image uploaded");
         } catch (Exception e) {
-            ResponseEntity.internalServerError().build();
+            System.err.println("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
     }
 

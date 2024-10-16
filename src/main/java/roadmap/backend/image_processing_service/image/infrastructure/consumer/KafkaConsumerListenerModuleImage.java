@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.lang.Nullable;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -13,9 +13,6 @@ import roadmap.backend.image_processing_service.image.application.interfaces.eve
 import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleTransformsModuleImage;
 import roadmap.backend.image_processing_service.image.application.config.kafka.topic.TopicConfigProperties;
 import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleAuthModuleImage;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -26,7 +23,6 @@ public class KafkaConsumerListenerModuleImage {
     @Qualifier("kafkaProducerByModuleTransformsModuleImage")
     private final KafkaProducerByModuleTransformsModuleImage kafkaProducerByModuleTransformsModuleImage;
     private final KafkaServiceModuleImage kafkaServiceModuleImage;
-    private final ConcurrentHashMap<String,RequestKafkaImage> pendingRequests = new ConcurrentHashMap<>();
 
     public KafkaConsumerListenerModuleImage(
             KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage,
@@ -46,9 +42,10 @@ public class KafkaConsumerListenerModuleImage {
             return null;
         }
     }
+
     private void resolveMethodTypeByModuleImage(RequestKafkaImage request) {
         switch (request.event()) {
-            case GET_ALL_IMAGES -> pendingRequests.put(request.UUID(), request);
+            case GET_ALL_IMAGES -> kafkaProducerByModuleAuthModuleImage.complete(request);
             case SAVE_IMAGE -> kafkaServiceModuleImage.saveImage(request.args());
             case UPDATE_IMAGE -> kafkaServiceModuleImage.updateImage(request.args());
         }
@@ -80,10 +77,19 @@ public class KafkaConsumerListenerModuleImage {
             case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleImage.send(kafkaResponse);
         }
     }
-    public CompletableFuture<RequestKafkaImage> waitForRequest(String UUID) {
-        CompletableFuture<RequestKafkaImage> future = new CompletableFuture<>();
-        RequestKafkaImage request = pendingRequests.remove(UUID);
-        return future;
-    }
+    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Image,groupId = "")
+    public void listen(ConsumerRecord<String, String> record) {
+        RequestKafkaImage request = jsonToObject(record.value());
 
+        if (request == null) return;
+
+        String kafkaResponse = resolveMethodType(request);
+
+        if (kafkaResponse == null) return;
+
+        switch (request.destinationEvent()) {
+            case AUTH -> kafkaProducerByModuleAuthModuleImage.send(kafkaResponse);
+            case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleImage.send(kafkaResponse);
+        }
+    }
 }
