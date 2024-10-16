@@ -3,13 +3,10 @@ package roadmap.backend.image_processing_service.image.application.interfaces.re
 import lombok.NonNull;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import roadmap.backend.image_processing_service.image.domain.dto.ImageDTO;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 @Service
 public interface ImageStorage {

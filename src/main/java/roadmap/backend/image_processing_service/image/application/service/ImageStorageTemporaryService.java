@@ -11,8 +11,6 @@ import roadmap.backend.image_processing_service.image.application.interfaces.rep
 import roadmap.backend.image_processing_service.image.domain.dto.ImageDTO;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import static java.io.File.separator;
 

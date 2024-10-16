@@ -3,7 +3,6 @@ package roadmap.backend.image_processing_service.image.application.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.NonNull;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.image.application.interfaces.Utils;
 @Service

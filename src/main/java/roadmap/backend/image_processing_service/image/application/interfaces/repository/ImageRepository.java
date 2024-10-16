@@ -3,6 +3,7 @@ package roadmap.backend.image_processing_service.image.application.interfaces.re
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
+import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.ImageGetAllResponse;
 import roadmap.backend.image_processing_service.image.domain.entity.ImageEntity;
 
 import java.util.List;
@@ -14,5 +15,5 @@ public interface ImageRepository extends CrudRepository<ImageEntity, Integer> {
     Optional<ImageEntity> findByUserIdAndImageName(Integer userId, String imageName);
     boolean existsByImageName(String imageName);
     Optional<ImageEntity> findByIdAndUserId(Integer id, Integer userId);
-    List<ImageEntity> findByUserId(Integer userId, Pageable pageable);
+    List<ImageGetAllResponse> findByUserId(Integer userId,Pageable pageable);
 }

@@ -59,16 +59,15 @@ public class ImageController {
     }
     @GetMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<HashMap<String,String>> getImages(@RequestParam("page") Integer page, @RequestParam("limit") Integer limit) {
-        final CompletableFuture<HashMap<String, String>> completableFuture = imageStorage.getAllImages(6, page, limit);
+    public ResponseEntity<HashMap<String,String>> getImages(
+            @RequestParam(value = "page",defaultValue = "0") Integer page,
+            @RequestParam(value ="limit",defaultValue = "10") Integer limit
+    ) {
         try {
-            HashMap<String, String> hashMap = completableFuture.get();
-            for (String key : hashMap.keySet()) {
-                System.out.println(key);
-                System.out.println(hashMap.get(key));
-            }
-            return completableFuture.thenApply(ResponseEntity::ok).get();
-        } catch (ExecutionException | InterruptedException e) {
+            return imageStorage.getAllImages(10, page, limit)
+                    .thenApply(ResponseEntity::ok).get();
+
+        } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
