@@ -19,6 +19,7 @@ import java.io.*;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -156,6 +157,30 @@ public class ImageStorageAzureService implements ImageStorage {
     @Async
     @Transactional
     @Override
+    public CompletableFuture<Map<String,String>> getImageDetails(Integer imageId, Integer userId){
+        CompletableFuture<Map<String,String>> completableFuture = new CompletableFuture<>();
+        ImageEntity imageEntity;
+        try {
+            imageEntity = imageRepository.findById(imageId).orElseThrow();
+        }catch (Exception e){
+            System.err.println("Error in getImageDetails: " + e.getMessage());
+            completableFuture.complete(null);
+            return completableFuture;
+        }
+        Map<String, String> hashMap = new HashMap<>();
+        hashMap.put("ID", imageEntity.getId().toString());
+        hashMap.put("Name",imageEntity.getImageName());
+        hashMap.put("Format",imageEntity.getFormat());
+        hashMap.put("Path",imageEntity.getImagePath());
+        hashMap.put("Created",imageEntity.getCreatedAt().toString());
+        hashMap.put("Updated",imageEntity.getUpdatedAt().toString());
+        completableFuture.complete(hashMap);
+        return completableFuture;
+    }
+    @Nullable
+    @Async
+    @Transactional
+    @Override
     public CompletableFuture<String> updateImage(Integer userId,String nameImage,String formatImage, byte[] image) {
 
         final boolean imageExists = imageRepository.existsByImageName(nameImage);
@@ -215,8 +240,8 @@ public class ImageStorageAzureService implements ImageStorage {
     @Async
     @Transactional
     @Override
-    public CompletableFuture<HashMap<String, String>> getAllImages(Integer Id,@NonNull Integer page,@NonNull Integer limit) {
-        CompletableFuture<HashMap<String, String>> completableFuture = new CompletableFuture<>();
+    public CompletableFuture<HashMap<Integer, String>> getAllImages(Integer Id,@NonNull Integer page,@NonNull Integer limit) {
+        CompletableFuture<HashMap<Integer, String>> completableFuture = new CompletableFuture<>();
         try{
             List<ImageNameAndPath> imageEntities = imageRepository.findByUserId(Id,PageRequest.of(page,limit));
             completableFuture.complete(parseListToHashMap(imageEntities));
@@ -227,12 +252,8 @@ public class ImageStorageAzureService implements ImageStorage {
         return completableFuture;
     }
     @NonNull
-    private HashMap<String, String> parseListToHashMap(@NonNull List<ImageNameAndPath> list) {
-        return (HashMap<String, String>)list.stream().collect(
-            Collectors.toMap(
-                ImageNameAndPath::imageName,
-                ImageNameAndPath::imagePath,
-                (existing, replacement) -> replacement
-            ));
+    private HashMap<Integer, String> parseListToHashMap(@NonNull List<ImageNameAndPath> list) {
+        return (HashMap<Integer, String>)list.stream().collect(
+            Collectors.toMap(ImageNameAndPath::id, ImageNameAndPath::imagePath, (existing, replacement) -> replacement));
     }
 }

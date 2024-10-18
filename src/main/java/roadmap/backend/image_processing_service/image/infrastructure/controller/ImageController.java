@@ -47,7 +47,7 @@ public class ImageController {
 
     @GetMapping("/images/{id}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<String> getImage(
+    public ResponseEntity<Map<String,String>> getImage(
             @NonNull HttpServletRequest request,
             @PathVariable("id") Integer id
     ) {
@@ -64,23 +64,27 @@ public class ImageController {
                 uuid
         );
 
+        final int idUser;
+        final Map<String,String> imageDetails;
         try {
-            final Integer idUser = Integer.parseInt(responseKafka.thenApply(r->r.args().get("user_id").toString()).get());
-            CompletableFuture<String> completableFuture = imageStorage.getImageUrl(id,idUser);
-            responseKafka.thenAccept(eventProducerToAuth::remove);
-            String url = completableFuture.get();
-            if (url == null || url.contains("Error"))
-                return ResponseEntity.notFound().build();
-            return ResponseEntity.ok().body(url);
+            idUser = Integer.parseInt(responseKafka.thenApply(r->r.args().get("user_id").toString()).get());
+            CompletableFuture<Map<String,String>> completableFuture = imageStorage.getImageDetails(id,idUser);
+            imageDetails = completableFuture.get();
         }catch (Exception e) {
             System.out.println("Controller image get image: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
 
+        responseKafka.thenAccept(eventProducerToAuth::remove);
+
+        if (imageDetails == null)  return ResponseEntity.notFound().build();
+
+        return ResponseEntity.ok().body(imageDetails);
+
     }
     @GetMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResponseEntity<HashMap<String,String>> getImages(
+    public ResponseEntity<HashMap<Integer,String>> getImages(
             @NonNull HttpServletRequest request,
             @RequestParam(value = "page",defaultValue = "0") Integer page,
             @RequestParam(value ="limit",defaultValue = "10") Integer limit
