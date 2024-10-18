@@ -1,11 +1,8 @@
 package roadmap.backend.image_processing_service.image.infrastructure.controller;
 
 
-import com.azure.storage.blob.BlobContainerClient;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.*;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -20,45 +17,65 @@ import roadmap.backend.image_processing_service.image.application.interfaces.eve
 import roadmap.backend.image_processing_service.image.application.interfaces.event.response.ResponseKafkaByAuth;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorage;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorageTemporary;
-import roadmap.backend.image_processing_service.image.application.service.ImageStorageAzureService;
 import roadmap.backend.image_processing_service.image.domain.dto.ImageDTO;
-import roadmap.backend.image_processing_service.image.infrastructure.consumer.KafkaConsumerListenerModuleImage;
 import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleAuthModuleImage;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 @Controller
 @RequestMapping("/")
 @PreAuthorize("denyAll()")
 public class ImageController {
     private final Utils utils;
-    private final ImageStorageTemporary imageStorageTemporary;
-    private final KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage;
-    private final KafkaConsumerListenerModuleImage kafkaConsumerListenerModuleImage;
+    private final ImageStorageTemporary storageTemporary;
+    private final KafkaProducerByModuleAuthModuleImage eventProducerToAuth;
     private final ImageStorage imageStorage;
 
     public ImageController(
             Utils utils, ImageStorageTemporary imageStorageTemporary,
-            KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage, KafkaConsumerListenerModuleImage kafkaConsumerListenerModuleImage,
+            KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage,
             ImageStorage imageStorage
     ){
         this.utils = utils;
-        this.imageStorageTemporary = imageStorageTemporary;
-        this.kafkaProducerByModuleAuthModuleImage = kafkaProducerByModuleAuthModuleImage;
-        this.kafkaConsumerListenerModuleImage = kafkaConsumerListenerModuleImage;
+        this.storageTemporary = imageStorageTemporary;
+        this.eventProducerToAuth = kafkaProducerByModuleAuthModuleImage;
         this.imageStorage = imageStorage;
     }
 
     @GetMapping("/images/{id}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public void getImage(
-            @PathVariable("id") Integer id,
-            @NonNull HttpServletResponse response
+    public ResponseEntity<String> getImage(
+            @NonNull HttpServletRequest request,
+            @PathVariable("id") Integer id
     ) {
+        final String uuid = UUID.randomUUID().toString();
+        CompletableFuture<RequestKafkaImage> responseKafka = eventProducerToAuth.send(
+                utils.converterObjectToStringJson(
+                        new ResponseKafkaByAuth(
+                                ModuleDestionationEvent.IMAGE,
+                                Map.of("token", utils.extractToken(request)),
+                                KafkaEventModuleImage.GET_IMAGE,
+                                uuid
+                        )
+                ),
+                uuid
+        );
+
+        try {
+            final Integer idUser = Integer.parseInt(responseKafka.thenApply(r->r.args().get("user_id").toString()).get());
+            CompletableFuture<String> completableFuture = imageStorage.getImageUrl(id,idUser);
+            responseKafka.thenAccept(eventProducerToAuth::remove);
+            String url = completableFuture.get();
+            if (url == null || url.contains("Error"))
+                return ResponseEntity.notFound().build();
+            return ResponseEntity.ok().body(url);
+        }catch (Exception e) {
+            System.out.println("Controller image get image: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
 
     }
     @GetMapping("/images")
@@ -68,6 +85,7 @@ public class ImageController {
             @RequestParam(value = "page",defaultValue = "0") Integer page,
             @RequestParam(value ="limit",defaultValue = "10") Integer limit
     ) {
+
         String uuid = UUID.randomUUID().toString();
         String jsonMessage = utils.converterObjectToStringJson(
                 new ResponseKafkaByAuth(
@@ -77,13 +95,15 @@ public class ImageController {
                         uuid
                 )
         );
-        CompletableFuture<RequestKafkaImage> result = kafkaProducerByModuleAuthModuleImage.sendWithUUID(jsonMessage,uuid);
+
+        CompletableFuture<RequestKafkaImage> result = eventProducerToAuth.send(jsonMessage,uuid);
+
         try {
             Integer idUser = Integer.parseInt(result.thenApply(r->r.args().get("user_id").toString()).get());
-            result.thenAccept(kafkaProducerByModuleAuthModuleImage::remove);
+            result.thenAccept(eventProducerToAuth::remove);
             return imageStorage.getAllImages(idUser, page, limit).thenApply(ResponseEntity::ok).get();
         } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
+            System.out.println("Controller image get all images: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
 
@@ -91,28 +111,35 @@ public class ImageController {
     @PostMapping("/images")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<String> uploadImage(@NonNull HttpServletRequest request, @RequestParam("file") MultipartFile file){
-        final String token = utils.extractToken(request);
+
+        if(file.getOriginalFilename() == null)
+            return ResponseEntity.noContent().build();
+
         final String uuid = UUID.randomUUID().toString();
-        String jsonMessage = utils.converterObjectToStringJson(
+        final String jsonMessage = utils.converterObjectToStringJson(
                 new ResponseKafkaByAuth(
                         ModuleDestionationEvent.IMAGE,
-                        Map.of("token", token),
+                        Map.of("token",  utils.extractToken(request)),
                         KafkaEventModuleImage.SAVE_IMAGE,
                         uuid
                 )
         );
-        kafkaProducerByModuleAuthModuleImage.send(jsonMessage);
+
+        CompletableFuture<RequestKafkaImage> responseKafka = eventProducerToAuth.send(jsonMessage,uuid);
+
+        final String[] metadataImage = file.getOriginalFilename().split("\\.");
         try{
-            ImageDTO imageDTO = new ImageDTO(
-                    file.getOriginalFilename().split("\\.")[0],
-                    file.getOriginalFilename().split("\\.")[1],
-                    file.getBytes()
-            );
-            imageStorageTemporary.uploadImage(token, imageDTO);
+            ImageDTO imageDTO = new ImageDTO(metadataImage[0],metadataImage[1], file.getBytes());
+            Integer idUser = Integer.parseInt(responseKafka.thenApply(requestKafkaImage -> requestKafkaImage.args().get("user_id").toString()).get());
+            CompletableFuture<String> responseSaveImage = imageStorage.saveImage(idUser,imageDTO);
+
+            if (responseSaveImage.get().contains("Error"))
+                return ResponseEntity.badRequest().body("Image save failed");
+
             return ResponseEntity.ok("Image uploaded");
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
+            System.err.println("Controller image save image: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Image save failed");
         }
     }
 

@@ -15,7 +15,7 @@ public interface ImageStorage {
     @Async
     CompletableFuture<String> saveImage(Integer userId, @NonNull ImageDTO imageDTO);
     @Async
-    CompletableFuture<String> getImageUrl(Integer imageId);
+    CompletableFuture<String> getImageUrl(Integer imageId,Integer userId);
     @Async
     CompletableFuture<ImageDTO> getImageFile(Integer imageId);
     @Async

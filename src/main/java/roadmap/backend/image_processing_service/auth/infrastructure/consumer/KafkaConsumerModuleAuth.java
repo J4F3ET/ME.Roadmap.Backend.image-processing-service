@@ -16,8 +16,6 @@ import roadmap.backend.image_processing_service.auth.application.interfaces.even
 import roadmap.backend.image_processing_service.auth.infrastructure.producer.KafkaProducerByModuleImageModuleAuth;
 import roadmap.backend.image_processing_service.auth.infrastructure.producer.KafkaProducerByModuleTransformsModuleAuth;
 
-import java.util.UUID;
-
 @Slf4j
 @Service
 public class KafkaConsumerModuleAuth {
@@ -95,11 +93,9 @@ public class KafkaConsumerModuleAuth {
     }
     @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Auth,groupId = "")
     public void listen(@NonNull ConsumerRecord<String, String> record) {
-
         ResponseKafkaByImage result = resolveMethodType(record.value());
-        String jsonResult = jsonString(result);
         if (result == null) return;
-
+        String jsonResult = jsonString(result);
         switch (result.destinationEvent()) {
             case IMAGE -> kafkaProducerByModuleImageModuleAuth.send(jsonResult, record.key());
             case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleAuth.send(jsonResult);

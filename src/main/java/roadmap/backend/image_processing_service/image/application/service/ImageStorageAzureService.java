@@ -9,7 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.ImageGetAllResponse;
+import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.ImageNameAndPath;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorage;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageRepository;
 import roadmap.backend.image_processing_service.image.domain.dto.ImageDTO;
@@ -117,16 +117,17 @@ public class ImageStorageAzureService implements ImageStorage {
     @Async
     @Transactional
     @Override
-    public CompletableFuture<String> getImageUrl(Integer id) {
+    public CompletableFuture<String> getImageUrl(Integer id,Integer userId) {
         CompletableFuture<String> completableFuture = new CompletableFuture<>();
-        ImageEntity imageEntity = imageRepository.findById(id).orElse(null);
-
-        if (imageEntity == null) {
-            completableFuture.complete(null);
+        ImageNameAndPath image;
+        try {
+            image = imageRepository.findByIdAndUserId(id,userId).orElseThrow();
+        }catch (Exception e){
+            System.err.println("Error in getImageUrl: " + e.getMessage());
+            completableFuture.complete("Error in getImageUrl: " + e.getMessage());
             return completableFuture;
         }
-
-        completableFuture.complete(imageEntity.getImagePath());
+        completableFuture.complete(image.imageName()+":"+image.imagePath());
         return completableFuture;
     }
     @Async
@@ -217,7 +218,7 @@ public class ImageStorageAzureService implements ImageStorage {
     public CompletableFuture<HashMap<String, String>> getAllImages(Integer Id,@NonNull Integer page,@NonNull Integer limit) {
         CompletableFuture<HashMap<String, String>> completableFuture = new CompletableFuture<>();
         try{
-            List<ImageGetAllResponse> imageEntities = imageRepository.findByUserId(Id,PageRequest.of(page,limit));
+            List<ImageNameAndPath> imageEntities = imageRepository.findByUserId(Id,PageRequest.of(page,limit));
             completableFuture.complete(parseListToHashMap(imageEntities));
         }catch (Exception e){
             System.out.println("Error getAllImages: " + e.getMessage());
@@ -226,11 +227,11 @@ public class ImageStorageAzureService implements ImageStorage {
         return completableFuture;
     }
     @NonNull
-    private HashMap<String, String> parseListToHashMap(@NonNull List<ImageGetAllResponse> list) {
+    private HashMap<String, String> parseListToHashMap(@NonNull List<ImageNameAndPath> list) {
         return (HashMap<String, String>)list.stream().collect(
             Collectors.toMap(
-                ImageGetAllResponse::imageName,
-                ImageGetAllResponse::imagePath,
+                ImageNameAndPath::imageName,
+                ImageNameAndPath::imagePath,
                 (existing, replacement) -> replacement
             ));
     }

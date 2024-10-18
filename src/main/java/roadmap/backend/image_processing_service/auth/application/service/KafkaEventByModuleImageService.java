@@ -1,5 +1,6 @@
 package roadmap.backend.image_processing_service.auth.application.service;
 
+import lombok.NonNull;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.interfaces.event.KafkaEventByModuleImage;
 import roadmap.backend.image_processing_service.auth.application.interfaces.event.component.KafkaEventModuleAuth;
@@ -22,15 +23,11 @@ public class KafkaEventByModuleImageService implements KafkaEventByModuleImage {
     @Override
     public ResponseKafkaByImage saveImage(RequestKafkaAuth request) {
         String token = request.args().get("token").toString();
-        if (token == null)
-            return null;
+
+        if (token == null) return null;
+
         Integer userId = jwtUtils.extractId(token);
-        return new ResponseKafkaByImage(
-                ModuleDestionationEvent.IMAGE,
-                Map.of("user_id", userId,"token", token),
-                KafkaEventModuleAuth.SAVE_IMAGE,
-                request.UUID()
-        );
+        return buildResponse(request, Map.of("user_id", userId,"token", token));
     }
 
     @Override
@@ -40,7 +37,12 @@ public class KafkaEventByModuleImageService implements KafkaEventByModuleImage {
 
     @Override
     public ResponseKafkaByImage getImage(RequestKafkaAuth request) {
-        return null;
+        String token = request.args().get("token").toString();
+
+        if (token == null) return null;
+
+        Integer userId = jwtUtils.extractId(token);
+        return buildResponse(request, Map.of("user_id", userId,"token", token));
     }
 
     @Override
@@ -49,16 +51,20 @@ public class KafkaEventByModuleImageService implements KafkaEventByModuleImage {
         if (token == null)
             return null;
         Integer userId = jwtUtils.extractId(token);
-        return new ResponseKafkaByImage(
-                ModuleDestionationEvent.IMAGE,
-                Map.of("user_id", userId,"token", token),
-                KafkaEventModuleAuth.GET_ALL_IMAGES,
-                request.UUID()
-        );
+        return buildResponse(request, Map.of("user_id", userId,"token", token));
     }
 
     @Override
     public ResponseKafkaByImage transformImage(RequestKafkaAuth request) {
         return null;
+    }
+
+    private ResponseKafkaByImage buildResponse(RequestKafkaAuth request, Map<String, Object> args) {
+        return new ResponseKafkaByImage(
+                request.destinationEvent(),
+                args,
+                request.event(),
+                request.UUID()
+        );
     }
 }

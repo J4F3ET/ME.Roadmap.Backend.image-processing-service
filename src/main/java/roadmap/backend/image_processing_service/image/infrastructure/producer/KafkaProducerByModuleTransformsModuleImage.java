@@ -12,8 +12,8 @@ public class KafkaProducerByModuleTransformsModuleImage {
     @Qualifier("kafkaTemplateModuleImage")
     private KafkaTemplate<String, String> kafkaTemplate;
 
-    public void send(String message) {
+    public void send(String message, String UUID) {
         // Cambiar el topic
-        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Image, message);
+        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Image, UUID, message);
     }
 }

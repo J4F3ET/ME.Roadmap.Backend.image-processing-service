@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import roadmap.backend.image_processing_service.image.domain.dto.ImageDTO;
 
-import java.io.File;
 import java.io.IOException;
 
 @Service

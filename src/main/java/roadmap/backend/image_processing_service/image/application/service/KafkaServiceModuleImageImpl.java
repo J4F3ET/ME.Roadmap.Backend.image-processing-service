@@ -1,5 +1,4 @@
 package roadmap.backend.image_processing_service.image.application.service;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.KafkaServiceModuleImage;
@@ -22,7 +21,7 @@ public class KafkaServiceModuleImageImpl implements KafkaServiceModuleImage {
     }
     @Transactional
     @Override
-    public void saveImage(@NonNull Map<String, Object> args) {
+    public void saveImage(Map<String, Object> args) {
         ImageDTO imageDTO = imageStorageTemporary.downloadImageDTO(args.get("token").toString());
         if (imageDTO == null || imageDTO.image().length == 0)
             return;

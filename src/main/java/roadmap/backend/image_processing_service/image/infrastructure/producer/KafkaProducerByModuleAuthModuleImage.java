@@ -1,8 +1,6 @@
 package roadmap.backend.image_processing_service.image.infrastructure.producer;
 
 import lombok.NonNull;
-import org.apache.qpid.proton.codec.security.SaslOutcomeType;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -25,11 +23,7 @@ public class KafkaProducerByModuleAuthModuleImage {
     }
 
     @Async
-    public void send(String message) {
-        kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Auth, message);
-    }
-    @Async
-    public CompletableFuture<RequestKafkaImage> sendWithUUID(String message, String UUID) {
+    public CompletableFuture<RequestKafkaImage> send(String message, String UUID) {
         kafkaTemplate.send(TopicConfigProperties.TOPIC_NAME_Auth, UUID, message);
         CompletableFuture<RequestKafkaImage> future = new CompletableFuture<>();
         pendingRequests.put(UUID, future);

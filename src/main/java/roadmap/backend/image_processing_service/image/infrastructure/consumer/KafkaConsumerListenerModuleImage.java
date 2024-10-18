@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.KafkaServiceModuleImage;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.request.RequestKafkaImage;
@@ -34,7 +35,7 @@ public class KafkaConsumerListenerModuleImage {
         this.kafkaServiceModuleImage = kafkaServiceModuleImage;
     }
     @Nullable
-    public RequestKafkaImage jsonToObject(String message) {
+    public RequestKafkaImage jsonToObject(@NonNull String message) {
         ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.readValue(message, RequestKafkaImage.class);
@@ -42,18 +43,22 @@ public class KafkaConsumerListenerModuleImage {
             return null;
         }
     }
-
-    private void resolveMethodTypeByModuleImage(RequestKafkaImage request) {
+    private void resolveMethodTypeByModuleImage(@NonNull RequestKafkaImage request) {
         switch (request.event()) {
-            case GET_ALL_IMAGES -> kafkaProducerByModuleAuthModuleImage.complete(request);
-            case SAVE_IMAGE -> kafkaServiceModuleImage.saveImage(request.args());
+            case GET_ALL_IMAGES, SAVE_IMAGE, GET_IMAGE -> kafkaProducerByModuleAuthModuleImage.complete(request);
             case UPDATE_IMAGE -> kafkaServiceModuleImage.updateImage(request.args());
         }
     }
-    private String resolveMethodTypeByModuleTransform(RequestKafkaImage request) {
+    @Nullable
+    private String resolveMethodTypeByModuleTransform(@NonNull RequestKafkaImage request) {
         return null;
     }
-    private String resolveMethodType(RequestKafkaImage request) {
+    @Nullable
+    private String resolveMethodTypeByModuleAuth(@NonNull RequestKafkaImage request) {
+        return null;
+    }
+    @Nullable
+    private String resolveMethodType(@NonNull RequestKafkaImage request) {
         switch (request.destinationEvent()) {
             case IMAGE  -> {
                 resolveMethodTypeByModuleImage(request);
@@ -61,24 +66,14 @@ public class KafkaConsumerListenerModuleImage {
             case TRANSFORMATION -> {
                 return resolveMethodTypeByModuleTransform(request);
             }
+            case AUTH -> {
+                return resolveMethodTypeByModuleAuth(request);
+            }
         }
         return null;
     }
     @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Image,groupId = "")
-    public void listen(String message) {
-        RequestKafkaImage request = jsonToObject(message);
-        if (request == null)
-            return;
-        String kafkaResponse = resolveMethodType(request);
-        if (kafkaResponse == null)
-            return;
-        switch (request.destinationEvent()) {
-            case AUTH -> kafkaProducerByModuleAuthModuleImage.send(kafkaResponse);
-            case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleImage.send(kafkaResponse);
-        }
-    }
-    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Image,groupId = "")
-    public void listen(ConsumerRecord<String, String> record) {
+    public void listen(@NonNull ConsumerRecord<String, String> record) {
         RequestKafkaImage request = jsonToObject(record.value());
 
         if (request == null) return;
@@ -88,8 +83,8 @@ public class KafkaConsumerListenerModuleImage {
         if (kafkaResponse == null) return;
 
         switch (request.destinationEvent()) {
-            case AUTH -> kafkaProducerByModuleAuthModuleImage.send(kafkaResponse);
-            case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleImage.send(kafkaResponse);
+            case AUTH -> kafkaProducerByModuleAuthModuleImage.send(kafkaResponse, record.key());
+            case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleImage.send(kafkaResponse, record.key());
         }
     }
 }
