@@ -1,15 +1,15 @@
 package roadmap.backend.image_processing_service.auth.application.interfaces.event;
 
 import org.springframework.stereotype.Service;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.request.RequestKafkaAuth;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.response.ResponseKafkaByImage;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.message.implement.KafkaMessageAuth;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.message.implement.KafkaMessageImage;
 
 
 @Service
 public interface KafkaEventByModuleImage {
-    ResponseKafkaByImage saveImage(RequestKafkaAuth request);
-    ResponseKafkaByImage updateImage(RequestKafkaAuth request);
-    ResponseKafkaByImage getImage(RequestKafkaAuth request);
-    ResponseKafkaByImage getAllImages(RequestKafkaAuth request);
-    ResponseKafkaByImage transformImage(RequestKafkaAuth request);
+    KafkaMessageImage saveImage(KafkaMessageAuth request);
+    KafkaMessageImage updateImage(KafkaMessageAuth request);
+    KafkaMessageImage getImage(KafkaMessageAuth request);
+    KafkaMessageImage getAllImages(KafkaMessageAuth request);
+    KafkaMessageImage transformImage(KafkaMessageAuth request);
 }

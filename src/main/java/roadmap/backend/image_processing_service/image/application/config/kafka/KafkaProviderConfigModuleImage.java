@@ -14,6 +14,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement.KafkaMessageTransforms;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,22 +23,20 @@ import java.util.Map;
 public class KafkaProviderConfigModuleImage {
     @Value("${spring.kafka.bootstrap-servers}")//Host de Kafka
     private String bootstrapServers;
-
+    //Producer Strings
     @NonNull
-    private Map<String, Object> producerConfigs() {
+    private Map<String, Object> producerConfigsString() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         return props;
     }
-    //Producer
     @Bean
     @Qualifier("producerFactoryModuleImage")
     public ProducerFactory<String, String> producerFactoryModuleImage() {
-        return new DefaultKafkaProducerFactory<>(this.producerConfigs());
+        return new DefaultKafkaProducerFactory<>(this.producerConfigsString());
     }
-
     @Bean
     @Qualifier("kafkaTemplateModuleImage")
     public KafkaTemplate<String, String> kafkaTemplateModuleImage(
@@ -45,6 +44,28 @@ public class KafkaProviderConfigModuleImage {
     ){
         return new KafkaTemplate<>(producerFactoryModuleImage);
     }
+    //Producer RequestKafkaTransforms
+    @NonNull
+    private Map<String, Object> producerConfigsRequestKafkaTransforms() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaMessageTransforms.class);
+        return props;
+    }
+    @Bean
+    @Qualifier("producerFactoryByTransformsModuleImage")
+    public ProducerFactory<String, KafkaMessageTransforms> producerFactoryByTransformsModuleImage() {
+        return new DefaultKafkaProducerFactory<>(this.producerConfigsRequestKafkaTransforms());
+    }
+    @Bean
+    @Qualifier("kafkaTemplateByTransformsModuleImage")
+    public KafkaTemplate<String, KafkaMessageTransforms> kafkaTemplateByTransformsModuleImage(
+            @Qualifier("producerFactoryByTransformsModuleImage") ProducerFactory<String, KafkaMessageTransforms> producerFactoryByTransformsModuleImage
+    ){
+        return new KafkaTemplate<>(producerFactoryByTransformsModuleImage);
+    }
+
     // Consumer
     public Map<String, Object> consumerConfigs() {
         Map<String, Object> props = new HashMap<>();

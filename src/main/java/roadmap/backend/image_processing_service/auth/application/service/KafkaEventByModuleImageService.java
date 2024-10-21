@@ -1,12 +1,10 @@
 package roadmap.backend.image_processing_service.auth.application.service;
 
-import lombok.NonNull;
 import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.auth.application.interfaces.event.KafkaEventByModuleImage;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.component.KafkaEventModuleAuth;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.component.ModuleDestionationEvent;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.request.RequestKafkaAuth;
-import roadmap.backend.image_processing_service.auth.application.interfaces.event.response.ResponseKafkaByImage;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.component.MessagePropertiesConstants;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.message.implement.KafkaMessageAuth;
+import roadmap.backend.image_processing_service.auth.application.interfaces.event.message.implement.KafkaMessageImage;
 
 import java.util.Map;
 
@@ -21,46 +19,46 @@ public class KafkaEventByModuleImageService implements KafkaEventByModuleImage {
 
 
     @Override
-    public ResponseKafkaByImage saveImage(RequestKafkaAuth request) {
-        String token = request.args().get("token").toString();
+    public KafkaMessageImage saveImage(KafkaMessageAuth request) {
+        String token = request.args().get(MessagePropertiesConstants.TOKEN).toString();
 
         if (token == null) return null;
 
         Integer userId = jwtUtils.extractId(token);
-        return buildResponse(request, Map.of("user_id", userId,"token", token));
+        return buildResponse(request, Map.of(MessagePropertiesConstants.USER_ID, userId, MessagePropertiesConstants.TOKEN, token));
     }
 
     @Override
-    public ResponseKafkaByImage updateImage(RequestKafkaAuth request) {
+    public KafkaMessageImage updateImage(KafkaMessageAuth request) {
         return null;
     }
 
     @Override
-    public ResponseKafkaByImage getImage(RequestKafkaAuth request) {
-        String token = request.args().get("token").toString();
+    public KafkaMessageImage getImage(KafkaMessageAuth request) {
+        String token = request.args().get(MessagePropertiesConstants.TOKEN).toString();
 
         if (token == null) return null;
 
         Integer userId = jwtUtils.extractId(token);
-        return buildResponse(request, Map.of("user_id", userId,"token", token));
+        return buildResponse(request, Map.of(MessagePropertiesConstants.USER_ID, userId, MessagePropertiesConstants.TOKEN, token));
     }
 
     @Override
-    public ResponseKafkaByImage getAllImages(RequestKafkaAuth request) {
-        String token = request.args().get("token").toString();
+    public KafkaMessageImage getAllImages(KafkaMessageAuth request) {
+        String token = request.args().get(MessagePropertiesConstants.TOKEN).toString();
         if (token == null)
             return null;
         Integer userId = jwtUtils.extractId(token);
-        return buildResponse(request, Map.of("user_id", userId,"token", token));
+        return buildResponse(request, Map.of(MessagePropertiesConstants.USER_ID, userId, MessagePropertiesConstants.TOKEN, token));
     }
 
     @Override
-    public ResponseKafkaByImage transformImage(RequestKafkaAuth request) {
+    public KafkaMessageImage transformImage(KafkaMessageAuth request) {
         return null;
     }
 
-    private ResponseKafkaByImage buildResponse(RequestKafkaAuth request, Map<String, Object> args) {
-        return new ResponseKafkaByImage(
+    private KafkaMessageImage buildResponse(KafkaMessageAuth request, Map<String, Object> args) {
+        return new KafkaMessageImage(
                 request.destinationEvent(),
                 args,
                 request.event(),

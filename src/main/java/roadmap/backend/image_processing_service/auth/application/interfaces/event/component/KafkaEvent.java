@@ -1,6 +1,6 @@
 package roadmap.backend.image_processing_service.auth.application.interfaces.event.component;
 
-public enum KafkaEventModuleAuth {
+public enum KafkaEvent {
     // Eventos que se emiten por modulo de Imagen
     SAVE_IMAGE,
     UPDATE_IMAGE,

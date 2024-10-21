@@ -1,4 +1,4 @@
-package roadmap.backend.image_processing_service.image.application.interfaces.apiRest.transform;
+package roadmap.backend.image_processing_service.transforms.domain.transformation.components;
 
 import java.io.Serializable;
 

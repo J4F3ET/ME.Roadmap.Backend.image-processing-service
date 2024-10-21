@@ -7,10 +7,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Getter
 @Setter
 @Builder
-public class Resize{
+public class Resize implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     @JsonProperty("width")
     private Integer width;
     @JsonProperty("height")

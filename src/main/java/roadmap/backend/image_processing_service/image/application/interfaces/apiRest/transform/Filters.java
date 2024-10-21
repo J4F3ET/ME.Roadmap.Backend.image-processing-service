@@ -6,10 +6,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Getter
 @Setter
 @Builder
-public class Filters{
+public class Filters implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     @JsonProperty("grayscale")
     private Boolean grayscale;
     @JsonProperty("sepia")
