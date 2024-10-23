@@ -8,6 +8,7 @@ import roadmap.backend.image_processing_service.transforms.application.config.ka
 import roadmap.backend.image_processing_service.transforms.application.event.message.KafkaMessage;
 import roadmap.backend.image_processing_service.transforms.application.event.message.implement.KafkaMessageImage;
 import roadmap.backend.image_processing_service.transforms.application.event.message.implement.KafkaMessageTransforms;
+import roadmap.backend.image_processing_service.transforms.application.interfaces.KafkaServiceTransforms;
 
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;

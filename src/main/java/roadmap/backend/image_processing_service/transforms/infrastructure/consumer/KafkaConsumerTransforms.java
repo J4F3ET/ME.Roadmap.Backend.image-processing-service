@@ -13,34 +13,38 @@ import roadmap.backend.image_processing_service.transforms.application.event.com
 import roadmap.backend.image_processing_service.transforms.application.event.message.KafkaMessage;
 import roadmap.backend.image_processing_service.transforms.application.event.message.implement.KafkaMessageImage;
 import roadmap.backend.image_processing_service.transforms.application.event.message.implement.KafkaMessageTransforms;
+import roadmap.backend.image_processing_service.transforms.application.interfaces.KafkaServiceTransforms;
 import roadmap.backend.image_processing_service.transforms.domain.transformation.components.FormatImage;
 import roadmap.backend.image_processing_service.transforms.infrastructure.producer.KafkaProducerTransforms;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 public class KafkaConsumerTransforms {
     private final KafkaProducerTransforms producer;
-
+    private final KafkaServiceTransforms transformServices;
     public KafkaConsumerTransforms(
-            @Qualifier("kafkaProducerTransforms") KafkaProducerTransforms producer) {
+            @Qualifier("kafkaProducerTransforms") KafkaProducerTransforms producer,
+             KafkaServiceTransforms transformServices
+    ) {
         this.producer = producer;
+        this.transformServices = transformServices;
     }
 
     @Nullable
     private KafkaMessageImage resolveMethodTypeImage(KafkaMessageTransforms message) {
-        Map<String, Object> args = Map.of(
-                MessagePropertiesConstants.NAME, message.name(),
-                MessagePropertiesConstants.FORMAT, FormatImage.BMP,
-                MessagePropertiesConstants.IMAGE, message.image()
-        );
-        return new KafkaMessageImage(
-                message.destinationEvent(),
-                KafkaEvent.TRANSFORM_IMAGE,
-                args,
-                message.UUID()
-        );
+        CompletableFuture<KafkaMessage> future = transformServices.execute(message);
+        KafkaMessage kafkaMessage;
+        try {
+            kafkaMessage = future.get(3, TimeUnit.SECONDS);
+        }catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return null;
+        }
+        return (KafkaMessageImage) kafkaMessage;
     }
     @Nullable
     private KafkaMessage resolveMethodType(KafkaMessageTransforms message) {
@@ -55,20 +59,6 @@ public class KafkaConsumerTransforms {
         if (message == null) return;
         KafkaMessage response = resolveMethodType(message);
         if (response == null) return;
-        producer.sendResponse(record.key(), (KafkaMessageImage) response);
+        producer.sendResponse(record.key(),response);
     }
-//    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Transform,groupId = "")
-//    public void listen(@NonNull String messageJson) {
-//        System.err.println("LLEGO EN LISTEN sin UID");
-//        KafkaMessageTransforms message = KafkaMessage.convertToObject(messageJson,KafkaMessageTransforms.class);
-//        if (message == null) return;
-//        System.err.println("message: " + message.UUID());
-//        KafkaMessage response = resolveMethodType(message);
-//        if (response == null) return;
-//        System.err.println("response: " + response.convertToJson());
-//        switch (message.destinationEvent()) {
-//            case IMAGE -> kafkaProducerImage.sendResponse((KafkaMessageImage) response, message.UUID());
-//            case AUTH -> kafkaProducerImage.sendResponse((KafkaMessageImage) response, message.UUID());
-//        }
-//    }
 }
