@@ -6,7 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.lang.Nullable;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 import roadmap.backend.image_processing_service.transforms.application.config.kafka.topic.TopicConfigProperties;
 import roadmap.backend.image_processing_service.transforms.application.event.component.KafkaEvent;
 import roadmap.backend.image_processing_service.transforms.application.event.component.MessagePropertiesConstants;
@@ -14,22 +14,22 @@ import roadmap.backend.image_processing_service.transforms.application.event.mes
 import roadmap.backend.image_processing_service.transforms.application.event.message.implement.KafkaMessageImage;
 import roadmap.backend.image_processing_service.transforms.application.event.message.implement.KafkaMessageTransforms;
 import roadmap.backend.image_processing_service.transforms.domain.transformation.components.FormatImage;
-import roadmap.backend.image_processing_service.transforms.infrastructure.producer.KafkaProducerByModuleImageModuleTransforms;
+import roadmap.backend.image_processing_service.transforms.infrastructure.producer.KafkaProducerTransforms;
 
 import java.util.Map;
 
 @Slf4j
-public class KafkaConsumerListenerModuleTransforms {
-    @Qualifier("kafkaProducerByModuleImageModuleTransforms")
-    private final KafkaProducerByModuleImageModuleTransforms kafkaProducerImage;
+@Service
+public class KafkaConsumerTransforms {
+    private final KafkaProducerTransforms producer;
 
-    public KafkaConsumerListenerModuleTransforms(KafkaProducerByModuleImageModuleTransforms kafkaProducerImage) {
-        this.kafkaProducerImage = kafkaProducerImage;
+    public KafkaConsumerTransforms(
+            @Qualifier("kafkaProducerTransforms") KafkaProducerTransforms producer) {
+        this.producer = producer;
     }
 
     @Nullable
     private KafkaMessageImage resolveMethodTypeImage(KafkaMessageTransforms message) {
-        System.out.println("resolveMethodTypeImage: " + message.convertToJson());
         Map<String, Object> args = Map.of(
                 MessagePropertiesConstants.NAME, message.name(),
                 MessagePropertiesConstants.FORMAT, FormatImage.BMP,
@@ -46,21 +46,29 @@ public class KafkaConsumerListenerModuleTransforms {
     private KafkaMessage resolveMethodType(KafkaMessageTransforms message) {
         return switch (message.destinationEvent()) {
             case IMAGE -> resolveMethodTypeImage(message);
-            case AUTH -> null;
         default -> null;
         };
     }
-    @Async
     @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Transform,groupId = "")
-    public void listen(@NonNull ConsumerRecord<String, KafkaMessageTransforms> record) {
-        System.err.println("ESCUCHANDO DESDE TRANSFORMER ");
-        KafkaMessageTransforms message = record.value();
+    public void listen(@NonNull ConsumerRecord<String, String> record) {
+        KafkaMessageTransforms message = KafkaMessage.convertToObject(record.value(),KafkaMessageTransforms.class);
         if (message == null) return;
         KafkaMessage response = resolveMethodType(message);
         if (response == null) return;
-        switch (message.destinationEvent()) {
-            case IMAGE -> kafkaProducerImage.sendResponse((KafkaMessageImage) response, record.key());
-            case AUTH -> kafkaProducerImage.sendResponse((KafkaMessageImage) response, record.key());
-        }
+        producer.sendResponse(record.key(), (KafkaMessageImage) response);
     }
+//    @KafkaListener(topics = TopicConfigProperties.TOPIC_NAME_Transform,groupId = "")
+//    public void listen(@NonNull String messageJson) {
+//        System.err.println("LLEGO EN LISTEN sin UID");
+//        KafkaMessageTransforms message = KafkaMessage.convertToObject(messageJson,KafkaMessageTransforms.class);
+//        if (message == null) return;
+//        System.err.println("message: " + message.UUID());
+//        KafkaMessage response = resolveMethodType(message);
+//        if (response == null) return;
+//        System.err.println("response: " + response.convertToJson());
+//        switch (message.destinationEvent()) {
+//            case IMAGE -> kafkaProducerImage.sendResponse((KafkaMessageImage) response, message.UUID());
+//            case AUTH -> kafkaProducerImage.sendResponse((KafkaMessageImage) response, message.UUID());
+//        }
+//    }
 }

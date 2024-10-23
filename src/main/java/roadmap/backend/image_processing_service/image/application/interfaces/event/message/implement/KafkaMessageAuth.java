@@ -15,7 +15,6 @@ public record KafkaMessageAuth(
 )implements KafkaMessage {
     @Serial
     private static final long serialVersionUID = 1L;
-
     @Override
     public DestinationEvent destinationEvent() {
         return this.destinationEvent;

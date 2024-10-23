@@ -1,6 +1,7 @@
 package roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement;
 
 import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.transform.FormatImage;
+import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.transform.Transformations;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.KafkaEvent;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.DestinationEvent;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.message.KafkaMessage;
@@ -12,6 +13,7 @@ public record KafkaMessageTransforms(
         DestinationEvent destinationEvent,
         KafkaEvent event,
         String name,
+        Transformations transformation,
         FormatImage format,
         byte[] image
 )implements KafkaMessage {

@@ -24,32 +24,11 @@ public class KafkaTopicConfigModuleAuth {
         configs.put(TopicConfig.MAX_MESSAGE_BYTES_CONFIG, TopicConfigProperties.MAX_MESSAGE_BYTES_CONFIG_VALUE);
         return configs;
     }
-
-    @Bean
-    @Qualifier("generateTopicModuleImageModuleAuth")
-    public NewTopic generateTopicModuleImageModuleAuth() {
-        return TopicBuilder
-                .name(TopicConfigProperties.TOPIC_NAME_Image)
-                .partitions(TopicConfigProperties.PARTITIONS)
-                .replicas(TopicConfigProperties.REPLICATION_FACTOR)
-                .configs(getTopicConfig())
-                .build();
-    }
     @Bean
     @Qualifier("generateTopicModuleAuthModuleAuth")
     public NewTopic generateTopicModuleAuthModuleAuth() {
         return TopicBuilder
                 .name(TopicConfigProperties.TOPIC_NAME_Auth)
-                .partitions(TopicConfigProperties.PARTITIONS)
-                .replicas(TopicConfigProperties.REPLICATION_FACTOR)
-                .configs(getTopicConfig())
-                .build();
-    }
-    @Bean
-    @Qualifier("generateTopicModuleTransformModuleAuth")
-    public NewTopic generateTopicModuleTransformModuleAuth() {
-        return TopicBuilder
-                .name(TopicConfigProperties.TOPIC_NAME_Transform)
                 .partitions(TopicConfigProperties.PARTITIONS)
                 .replicas(TopicConfigProperties.REPLICATION_FACTOR)
                 .configs(getTopicConfig())

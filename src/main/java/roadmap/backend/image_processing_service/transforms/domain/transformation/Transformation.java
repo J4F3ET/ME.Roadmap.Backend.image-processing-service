@@ -7,26 +7,13 @@ import roadmap.backend.image_processing_service.transforms.domain.transformation
 
 import java.io.Serial;
 import java.io.Serializable;
-
-public class Transformation implements Serializable {
+public record Transformation(
+        Resize resize,
+        Crop crop,
+        Integer rotate,
+        FormatImage format,
+        Filters filters
+) implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
-    final private Resize resize;
-    final private Crop crop;
-    final private Integer rotate;
-    final private FormatImage format;
-    final private Filters filters;
-
-    public Transformation(
-            Resize resize,
-            Crop crop,
-            Integer rotate,
-            FormatImage format,
-            Filters filters) {
-        this.resize = resize;
-        this.crop = crop;
-        this.rotate = rotate;
-        this.format = format;
-        this.filters = filters;
-    }
 }

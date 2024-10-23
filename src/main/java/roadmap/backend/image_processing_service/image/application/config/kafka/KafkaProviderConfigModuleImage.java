@@ -14,7 +14,6 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement.KafkaMessageTransforms;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,28 +43,6 @@ public class KafkaProviderConfigModuleImage {
     ){
         return new KafkaTemplate<>(producerFactoryModuleImage);
     }
-    //Producer RequestKafkaTransforms
-    @NonNull
-    private Map<String, Object> producerConfigsRequestKafkaTransforms() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaMessageTransforms.class);
-        return props;
-    }
-    @Bean
-    @Qualifier("producerFactoryByTransformsModuleImage")
-    public ProducerFactory<String, KafkaMessageTransforms> producerFactoryByTransformsModuleImage() {
-        return new DefaultKafkaProducerFactory<>(this.producerConfigsRequestKafkaTransforms());
-    }
-    @Bean
-    @Qualifier("kafkaTemplateByTransformsModuleImage")
-    public KafkaTemplate<String, KafkaMessageTransforms> kafkaTemplateByTransformsModuleImage(
-            @Qualifier("producerFactoryByTransformsModuleImage") ProducerFactory<String, KafkaMessageTransforms> producerFactoryByTransformsModuleImage
-    ){
-        return new KafkaTemplate<>(producerFactoryByTransformsModuleImage);
-    }
-
     // Consumer
     public Map<String, Object> consumerConfigs() {
         Map<String, Object> props = new HashMap<>();

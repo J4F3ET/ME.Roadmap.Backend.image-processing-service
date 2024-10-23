@@ -1,7 +1,5 @@
 package roadmap.backend.image_processing_service.image.infrastructure.consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.lang.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -14,32 +12,26 @@ import roadmap.backend.image_processing_service.image.application.interfaces.eve
 import roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement.KafkaMessageAuth;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement.KafkaMessageImage;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement.KafkaMessageTransforms;
-import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleTransformsModuleImage;
+import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerImage;
 import roadmap.backend.image_processing_service.image.application.config.kafka.topic.TopicConfigProperties;
-import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleAuthModuleImage;
 
 @Slf4j
 @Service
-public class KafkaConsumerListenerModuleImage {
+public class KafkaConsumerImage {
 
-    @Qualifier("kafkaProducerByModuleAuthModuleImage")
-    private final KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage;
-    @Qualifier("kafkaProducerByModuleTransformsModuleImage")
-    private final KafkaProducerByModuleTransformsModuleImage kafkaProducerByModuleTransformsModuleImage;
+    private final KafkaProducerImage producer;
     private final KafkaServiceModuleImage kafkaServiceModuleImage;
 
-    public KafkaConsumerListenerModuleImage(
-            KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage,
-            KafkaProducerByModuleTransformsModuleImage kafkaProducerByModuleTransformsModuleImage,
+    public KafkaConsumerImage(
+            @Qualifier("kafkaProducerImage") KafkaProducerImage producer,
             KafkaServiceModuleImage kafkaServiceModuleImage
-    ) {
-        this.kafkaProducerByModuleAuthModuleImage = kafkaProducerByModuleAuthModuleImage;
-        this.kafkaProducerByModuleTransformsModuleImage = kafkaProducerByModuleTransformsModuleImage;
+    ){
+        this.producer = producer;
         this.kafkaServiceModuleImage = kafkaServiceModuleImage;
     }
     private void resolveMethodTypeByModuleImage(@NonNull KafkaMessageImage request) {
         switch (request.event()) {
-            case GET_ALL_IMAGES, SAVE_IMAGE, GET_IMAGE -> kafkaProducerByModuleAuthModuleImage.complete(request);
+            case GET_ALL_IMAGES, SAVE_IMAGE, GET_IMAGE,TRANSFORM_IMAGE -> producer.complete(request);
             case UPDATE_IMAGE -> kafkaServiceModuleImage.updateImage(request.args());
         }
     }
@@ -74,13 +66,6 @@ public class KafkaConsumerListenerModuleImage {
         KafkaMessage response = resolveMethodType(request);
         if (response == null) return;
 
-        String kafkaResponse = response.convertToJson();
-
-        if (kafkaResponse == null) return;
-
-        switch (request.destinationEvent()) {
-            case AUTH -> kafkaProducerByModuleAuthModuleImage.send(kafkaResponse, record.key());
-            case TRANSFORMATION -> kafkaProducerByModuleTransformsModuleImage.send(kafkaResponse, record.key());
-        }
+        producer.sendResponse(record.key(), response);
     }
 }

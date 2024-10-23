@@ -27,29 +27,9 @@ public class KafkaTopicConfigModuleImage {
     @Qualifier("generateTopicModuleImageModuleImage")
     public NewTopic generateTopicModuleImageModuleImage() {
         return TopicBuilder
-                .name(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.TOPIC_NAME_Image)
-                .partitions(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.PARTITIONS)
-                .replicas(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.REPLICATION_FACTOR)
-                .configs(getTopicConfig())
-                .build();
-    }
-    @Bean
-    @Qualifier("generateTopicModuleAuthModuleImage")
-    public NewTopic generateTopicModuleAuthModuleImage() {
-        return TopicBuilder
-                .name(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.TOPIC_NAME_Auth)
-                .partitions(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.PARTITIONS)
-                .replicas(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.REPLICATION_FACTOR)
-                .configs(getTopicConfig())
-                .build();
-    }
-    @Bean
-    @Qualifier("generateTopicModuleTransformModuleImage")
-    public NewTopic generateTopicModuleTransformModuleImage() {
-        return TopicBuilder
-                .name(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.TOPIC_NAME_Transform)
-                .partitions(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.PARTITIONS)
-                .replicas(roadmap.backend.image_processing_service.auth.application.config.kafka.topic.TopicConfigProperties.REPLICATION_FACTOR)
+                .name(TopicConfigProperties.TOPIC_NAME_Image)
+                .partitions(TopicConfigProperties.PARTITIONS)
+                .replicas(TopicConfigProperties.REPLICATION_FACTOR)
                 .configs(getTopicConfig())
                 .build();
     }

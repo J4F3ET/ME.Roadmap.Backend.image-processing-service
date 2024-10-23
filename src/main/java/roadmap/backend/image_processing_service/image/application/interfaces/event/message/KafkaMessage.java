@@ -9,6 +9,7 @@ import java.io.Serializable;
 
 public interface KafkaMessage extends Serializable {
     DestinationEvent destinationEvent();
+    String UUID();
     default String convertToJson(){
         ObjectMapper mapper = new ObjectMapper();
         try {

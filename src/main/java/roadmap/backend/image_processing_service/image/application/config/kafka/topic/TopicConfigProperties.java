@@ -2,7 +2,7 @@ package roadmap.backend.image_processing_service.image.application.config.kafka.
 
 import org.apache.kafka.common.config.TopicConfig;
 
-public class TopicConfigProperties {
+public abstract class TopicConfigProperties {
     public static final String TOPIC_NAME_Image = "topic-module-image";//Topic name: Nombre del topic = "image-processing-service"
     public static final String TOPIC_NAME_Auth = "topic-module-auth";//Topic name: Nombre del topic = "auth-service"
     public static final String TOPIC_NAME_Transform = "topic-module-transform";//Topic name: Nombre del topic = "transform-service"

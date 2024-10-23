@@ -3,25 +3,27 @@ package roadmap.backend.image_processing_service.image.infrastructure.controller
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import roadmap.backend.image_processing_service.image.application.config.kafka.topic.TopicConfigProperties;
 import roadmap.backend.image_processing_service.image.application.interfaces.Utils;
 import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.TransformRequest;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.KafkaEvent;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.MessagePropertiesConstants;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.DestinationEvent;
+import roadmap.backend.image_processing_service.image.application.interfaces.event.message.KafkaMessage;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement.KafkaMessageAuth;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement.KafkaMessageImage;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.message.implement.KafkaMessageTransforms;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorage;
 import roadmap.backend.image_processing_service.image.application.interfaces.repository.ImageStorageTemporary;
 import roadmap.backend.image_processing_service.image.domain.dto.ImageDTO;
-import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleAuthModuleImage;
-import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerByModuleTransformsModuleImage;
+import roadmap.backend.image_processing_service.image.infrastructure.producer.KafkaProducerImage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,20 +36,18 @@ import java.util.concurrent.CompletableFuture;
 public class ImageController {
     private final Utils utils;
     private final ImageStorageTemporary storageTemporary;
-    private final KafkaProducerByModuleAuthModuleImage eventProducerToAuth;
-    private final KafkaProducerByModuleTransformsModuleImage producerToTransforms;
+    private final KafkaProducerImage producer;
     private final ImageStorage imageStorage;
 
     public ImageController(
             Utils utils, ImageStorageTemporary imageStorageTemporary,
-            KafkaProducerByModuleAuthModuleImage kafkaProducerByModuleAuthModuleImage,
-            KafkaProducerByModuleTransformsModuleImage producerToTransforms,
+            @Qualifier("kafkaProducerImage") KafkaProducerImage producer,
             ImageStorage imageStorage
     ){
         this.utils = utils;
         this.storageTemporary = imageStorageTemporary;
-        this.eventProducerToAuth = kafkaProducerByModuleAuthModuleImage;
-        this.producerToTransforms = producerToTransforms;
+        this.producer = producer;
+
         this.imageStorage = imageStorage;
     }
 
@@ -59,17 +59,13 @@ public class ImageController {
     ) {
 
         final String uuid = UUID.randomUUID().toString();
-        CompletableFuture<KafkaMessageImage> responseKafka = eventProducerToAuth.send(
-                utils.converterObjectToStringJson(
-                        (new KafkaMessageAuth(
-                                DestinationEvent.IMAGE,
-                                Map.of("token", utils.extractToken(request)),
-                                KafkaEvent.GET_IMAGE,
-                                uuid
-                        ))
-                ),
+        KafkaMessage message = new KafkaMessageAuth(
+                DestinationEvent.IMAGE,
+                Map.of("token", utils.extractToken(request)),
+                KafkaEvent.GET_IMAGE,
                 uuid
         );
+        CompletableFuture<KafkaMessageImage> responseKafka = producer.send(TopicConfigProperties.TOPIC_NAME_Auth, message);
 
         final int idUser;
         final Map<String,String> imageDetails;
@@ -82,7 +78,7 @@ public class ImageController {
             return ResponseEntity.internalServerError().build();
         }
 
-        responseKafka.thenAccept(eventProducerToAuth::remove);
+        responseKafka.thenAccept(producer::remove);
 
         if (imageDetails == null)  return ResponseEntity.notFound().build();
 
@@ -96,22 +92,18 @@ public class ImageController {
             @RequestParam(value = "page",defaultValue = "0") Integer page,
             @RequestParam(value ="limit",defaultValue = "10") Integer limit
     ) {
-
         String uuid = UUID.randomUUID().toString();
-        String jsonMessage = utils.converterObjectToStringJson(
-                new KafkaMessageAuth(
-                        DestinationEvent.IMAGE,
-                        Map.of(MessagePropertiesConstants.TOKEN, utils.extractToken(request)),
-                        KafkaEvent.GET_ALL_IMAGES,
-                        uuid
-                )
+        KafkaMessage message = new KafkaMessageAuth(
+                DestinationEvent.IMAGE,
+                Map.of(MessagePropertiesConstants.TOKEN, utils.extractToken(request)),
+                KafkaEvent.GET_ALL_IMAGES,
+                uuid
         );
-
-        CompletableFuture<KafkaMessageImage> result = eventProducerToAuth.send(jsonMessage,uuid);
+        CompletableFuture<KafkaMessageImage> result = producer.send(TopicConfigProperties.TOPIC_NAME_Auth,message);
 
         try {
             Integer idUser = Integer.parseInt(result.thenApply(r->r.args().get(MessagePropertiesConstants.USER_ID).toString()).get());
-            result.thenAccept(eventProducerToAuth::remove);
+            result.thenAccept(producer::remove);
             return imageStorage.getAllImages(idUser, page, limit).thenApply(ResponseEntity::ok).get();
         } catch (Exception e) {
             System.out.println("Controller image get all images: " + e.getMessage());
@@ -127,16 +119,13 @@ public class ImageController {
             return ResponseEntity.noContent().build();
 
         final String uuid = UUID.randomUUID().toString();
-        final String jsonMessage = utils.converterObjectToStringJson(
-                new KafkaMessageAuth(
-                        DestinationEvent.IMAGE,
-                        Map.of(MessagePropertiesConstants.TOKEN,  utils.extractToken(request)),
-                        KafkaEvent.SAVE_IMAGE,
-                        uuid
-                )
+        KafkaMessage message = new KafkaMessageAuth(
+                DestinationEvent.IMAGE,
+                Map.of(MessagePropertiesConstants.TOKEN,  utils.extractToken(request)),
+                KafkaEvent.SAVE_IMAGE,
+                uuid
         );
-
-        CompletableFuture<KafkaMessageImage> responseKafka = eventProducerToAuth.send(jsonMessage,uuid);
+        CompletableFuture<KafkaMessageImage> responseKafka = producer.send(TopicConfigProperties.TOPIC_NAME_Auth,message);
 
         final String[] metadataImage = file.getOriginalFilename().split("\\.");
         try{
@@ -148,7 +137,7 @@ public class ImageController {
                             .toString()
             ).get());
             CompletableFuture<String> responseSaveImage = imageStorage.saveImage(idUser,imageDTO);
-
+            responseKafka.thenAccept(producer::remove);
             if (responseSaveImage.get().contains("Error"))
                 return ResponseEntity.badRequest().body("Image save failed");
 
@@ -173,21 +162,18 @@ public class ImageController {
                 DestinationEvent.IMAGE,
                 KafkaEvent.TRANSFORM_IMAGE,
           "TEST MESSAGE",
+                transformRequest.getTransformations(),
                 transformRequest.getTransformations().getFormat(),
                 byteArray
         );
-        System.out.println("Controller image transform image: " + message.convertToJson());
-        CompletableFuture<KafkaMessageImage> responseKafka = producerToTransforms.send(message, uuid);
-        KafkaMessageImage response;
+        CompletableFuture<KafkaMessageImage> responseKafka = producer.send(TopicConfigProperties.TOPIC_NAME_Transform,message);
+        String body;
         try {
-            response = responseKafka.get();
+            body = responseKafka.get().convertToJson();
         } catch (Exception e) {
-            System.err.println("Controller image transform image: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
-        responseKafka.thenAccept(eventProducerToAuth::remove);
-        System.out.println("Controller image transform image: " + response.convertToJson());
-        return ResponseEntity.ok(response.convertToJson());
+        return ResponseEntity.ok(body);
     }
 }
 

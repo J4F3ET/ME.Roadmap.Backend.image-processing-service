@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import org.springframework.lang.Nullable;
+import roadmap.backend.image_processing_service.transforms.application.event.component.DestinationEvent;
 
 import java.io.Serializable;
 
 public interface KafkaMessage extends Serializable {
+    DestinationEvent destinationEvent();
     @Nullable
     default String convertToJson(){
         ObjectMapper mapper = new ObjectMapper();
