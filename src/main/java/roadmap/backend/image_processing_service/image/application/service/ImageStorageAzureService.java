@@ -131,19 +131,20 @@ public class ImageStorageAzureService implements ImageStorage {
         completableFuture.complete(image.imageName()+":"+image.imagePath());
         return completableFuture;
     }
-    @Async
     @Transactional
     @Override
     public CompletableFuture<ImageDTO> getImageFile(Integer id) {
-        ImageEntity imageEntity = imageRepository.findById(id).orElse(null);
+        ImageEntity imageEntity;
         CompletableFuture<ImageDTO> completableFuture = new CompletableFuture<>();
-
-        if (imageEntity == null) {
+        try {
+            imageEntity = imageRepository.findById(id).orElseThrow();
+        }catch (Exception e){
+            System.err.println("Error in getImageFile: " + e.getMessage());
             completableFuture.complete(null);
             return completableFuture;
         }
-
-        BlobClient blobClient = containerClient.getBlobClient(imageEntity.getImagePath());
+        String url = imageEntity.getUserId().toString() + "/" + imageEntity.getImageName()+"."+imageEntity.getFormat();
+        BlobClient blobClient = containerClient.getBlobClient(url);
         BinaryData binaryData = blobClient.downloadContent();
 
         completableFuture.complete(new ImageDTO(

@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import roadmap.backend.image_processing_service.image.application.config.kafka.topic.TopicConfigProperties;
 import roadmap.backend.image_processing_service.image.application.interfaces.Utils;
 import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.TransformRequest;
+import roadmap.backend.image_processing_service.image.application.interfaces.apiRest.transform.FormatImage;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.KafkaEvent;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.MessagePropertiesConstants;
 import roadmap.backend.image_processing_service.image.application.interfaces.event.component.DestinationEvent;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Controller
 @RequestMapping("/")
@@ -156,20 +158,26 @@ public class ImageController {
             @RequestBody @Validated TransformRequest transformRequest
     ){
         String uuid = UUID.randomUUID().toString();
-        byte[] byteArray = {1, 2, 3, 4, 5};
+        CompletableFuture<ImageDTO> futureImage = imageStorage.getImageFile(id);
+        ImageDTO imageDTO;
+        try {
+            imageDTO = futureImage.get(10L, TimeUnit.SECONDS);
+        }catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
         KafkaMessageTransforms message = new KafkaMessageTransforms(
                 uuid,
                 DestinationEvent.IMAGE,
                 KafkaEvent.TRANSFORM_IMAGE,
-          "TEST MESSAGE",
+                imageDTO.name(),
                 transformRequest.getTransformations(),
-                transformRequest.getTransformations().getFormat(),
-                byteArray
+                FormatImage.valueOf(imageDTO.format()),
+                imageDTO.image()
         );
         CompletableFuture<KafkaMessageImage> responseKafka = producer.send(TopicConfigProperties.TOPIC_NAME_Transform,message);
         String body;
         try {
-            body = responseKafka.get().convertToJson();
+            body = responseKafka.get(3, TimeUnit.SECONDS).convertToJson();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

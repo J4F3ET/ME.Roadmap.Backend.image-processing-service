@@ -12,22 +12,24 @@ import roadmap.backend.image_processing_service.transforms.domain.transformation
 import roadmap.backend.image_processing_service.transforms.domain.transformation.components.Resize;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
+
 @Service
 public interface KafkaServiceTransforms {
     @Async
     CompletableFuture<KafkaMessage> execute(KafkaMessageTransforms message);
     @Async
-    CompletableFuture<ImageDTO> resize(Resize value, ImageDTO image);
+    CompletableFuture<Void> resize(Resize value, ImageDTO image, Semaphore semaphore);
     @Async
-    CompletableFuture<ImageDTO> crop(Crop value, ImageDTO image);
+    CompletableFuture<Void> crop(Crop value, ImageDTO image, Semaphore semaphore);
     @Async
-    CompletableFuture<ImageDTO> rotate(Integer value, ImageDTO image);
+    CompletableFuture<Void> rotate(Integer value, ImageDTO image, Semaphore semaphore);
     @Async
-    CompletableFuture<ImageDTO> format(FormatImage value, ImageDTO image);
+    CompletableFuture<Void> format(FormatImage value, ImageDTO image,Semaphore semaphore);
     @Async
-    CompletableFuture<ImageDTO> filter(Filters value, ImageDTO image);
+    CompletableFuture<Void> filter(Filters value, ImageDTO image,Semaphore semaphore);
     @Async
-    CompletableFuture<byte[]> grayscale(byte[] image);
+    CompletableFuture<Void> grayscale(byte[] image,Semaphore semaphore);
     @Async
-    CompletableFuture<byte[]> sepia(byte[] image);
+    CompletableFuture<Void> sepia(byte[] image,Semaphore semaphore);
 }
