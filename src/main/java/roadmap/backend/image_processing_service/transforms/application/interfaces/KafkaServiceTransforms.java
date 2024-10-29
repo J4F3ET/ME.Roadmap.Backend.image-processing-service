@@ -19,17 +19,17 @@ public interface KafkaServiceTransforms {
     @Async
     CompletableFuture<KafkaMessage> execute(KafkaMessageTransforms message);
     @Async
-    CompletableFuture<Void> resize(Resize value, ImageDTO image, Semaphore semaphore);
+    CompletableFuture<Void> resize(String uuid, Resize value, ImageDTO image, Semaphore semaphore);
     @Async
-    CompletableFuture<Void> crop(Crop value, ImageDTO image, Semaphore semaphore);
+    CompletableFuture<Void> crop(String uuid,Crop value, ImageDTO image, Semaphore semaphore);
     @Async
-    CompletableFuture<Void> rotate(Integer value, ImageDTO image, Semaphore semaphore);
+    CompletableFuture<Void> rotate(String uuid,Integer value, ImageDTO image, Semaphore semaphore);
     @Async
-    CompletableFuture<Void> format(FormatImage value, ImageDTO image,Semaphore semaphore);
+    CompletableFuture<Void> format(String uuid,FormatImage value, ImageDTO image,Semaphore semaphore);
     @Async
-    CompletableFuture<Void> filter(Filters value, ImageDTO image,Semaphore semaphore);
+    CompletableFuture<Void> filter(String uuid,Filters value, ImageDTO image,Semaphore semaphore);
     @Async
-    CompletableFuture<Void> grayscale(byte[] image,Semaphore semaphore);
+    CompletableFuture<Void> grayscale(String uuid,ImageDTO image,Semaphore semaphore);
     @Async
-    CompletableFuture<Void> sepia(byte[] image,Semaphore semaphore);
+    CompletableFuture<Void> sepia(String uuid,ImageDTO image,Semaphore semaphore);
 }
